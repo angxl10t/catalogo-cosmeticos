@@ -10,15 +10,12 @@ import {
   Edit3, 
   Trash2, 
   Eye, 
-  EyeOff, 
-  ArrowLeft, 
+  EyeOff,
   Search, 
   Phone, 
-  Save, 
-  Sparkles,
+  Save,
   ShoppingBag
 } from 'lucide-react';
-import Link from 'next/link';
 
 export default function AdminDashboardPage() {
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -109,27 +106,12 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans text-slate-800">
       {/* Top Navbar */}
-      <header className="bg-slate-900 text-white sticky top-0 z-40 border-b border-slate-800 shadow-md">
+      <header className="bg-white sticky top-0 z-40 border-b border-slate-200 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white bg-slate-800 px-3 py-1.5 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Ver Catálogo</span>
-            </Link>
-            <div className="h-5 w-px bg-slate-800" />
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-base tracking-tight text-white">
-                Panel<span className="text-blue-500">Admin</span>
-              </span>
-              <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-full font-semibold">
-                Cosméticos & Hogar
-              </span>
-            </div>
+          <div>
+            <h1 className="font-bold text-base text-slate-900">Inventario & Productos</h1>
+            <p className="text-xs text-slate-400">Gestiona precios, stock y variantes de tono en tiempo real.</p>
           </div>
-
           <button
             onClick={() => {
               setProductoSeleccionado(null);
