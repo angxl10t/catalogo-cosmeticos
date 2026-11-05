@@ -141,7 +141,7 @@ INSERT INTO public.productos (
     'a0000001-0000-0000-0000-000000000003',
     52.00, 36.90, 30,
     false, false, true,
-    'https://images.unsplash.com/photo-1608248597359-2e06a31c5874?auto=format&fit=crop&w=600&q=80'
+    'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=600&q=80'
 ) ON CONFLICT (slug) DO UPDATE SET 
     precio_oferta = EXCLUDED.precio_oferta,
     stock = EXCLUDED.stock;

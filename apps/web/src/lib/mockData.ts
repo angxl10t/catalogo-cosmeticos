@@ -124,7 +124,7 @@ export const PRODUCTOS_MOCK: Producto[] = [
     es_destacado: false,
     es_nuevo: false,
     activo: true,
-    imagen_principal: 'https://images.unsplash.com/photo-1608248597359-2e06a31c5874?auto=format&fit=crop&w=600&q=80',
+    imagen_principal: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=600&q=80',
     galeria_imagenes: [],
   }
 ];
