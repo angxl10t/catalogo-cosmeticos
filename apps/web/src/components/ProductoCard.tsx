@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Producto, VarianteProducto } from '@/types/catalogo';
 import { useCarrito } from '@/context/CarritoContext';
+import { obtenerImagenProducto } from '@/lib/imagenesVariantes';
 import { MessageCircle, Plus, Check } from 'lucide-react';
 
 interface Props {
@@ -24,7 +25,7 @@ export function ProductoCard({ producto, onVerDetalle }: Props) {
     setTimeout(() => setAgregadoAnim(false), 900);
   };
 
-  const imagenActual = varianteSeleccionada?.imagen_url || producto.imagen_principal;
+  const imagenActual = obtenerImagenProducto(producto, varianteSeleccionada);
 
   return (
     <div
@@ -34,6 +35,7 @@ export function ProductoCard({ producto, onVerDetalle }: Props) {
       {/* Imagen Principal */}
       <div className="relative aspect-square w-full overflow-hidden bg-neutral-100">
         <img
+          key={imagenActual}
           src={imagenActual}
           alt={producto.nombre}
           className="w-full h-full object-cover object-center group-hover:scale-103 transition-transform duration-300 ease-out"
@@ -56,6 +58,19 @@ export function ProductoCard({ producto, onVerDetalle }: Props) {
             </span>
           )}
         </div>
+
+        {/* Badge de Tono Seleccionado sobre la imagen */}
+        {varianteSeleccionada && (
+          <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-xs text-white px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase flex items-center gap-1 shadow-sm pointer-events-none">
+            {varianteSeleccionada.codigo_hex && (
+              <span
+                className="w-2 h-2 rounded-full border border-white/50 shrink-0"
+                style={{ backgroundColor: varianteSeleccionada.codigo_hex }}
+              />
+            )}
+            <span className="truncate max-w-[80px] sm:max-w-[100px]">{varianteSeleccionada.nombre}</span>
+          </div>
+        )}
       </div>
 
       {/* Contenido */}

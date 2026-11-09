@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Producto, VarianteProducto } from '@/types/catalogo';
 import { useCarrito } from '@/context/CarritoContext';
+import { obtenerImagenProducto } from '@/lib/imagenesVariantes';
 import { 
   X, 
   MessageCircle, 
@@ -87,7 +88,7 @@ export function DetalleProductoModal({
     window.open(url, '_blank');
   };
 
-  const imagenMostrar = varianteSeleccionada?.imagen_url || producto.imagen_principal;
+  const imagenMostrar = obtenerImagenProducto(producto, varianteSeleccionada);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
@@ -120,9 +121,10 @@ export function DetalleProductoModal({
           {/* Imagen Principal */}
           <div className="relative aspect-square w-full bg-neutral-100 border border-neutral-200 overflow-hidden">
             <img
+              key={imagenMostrar}
               src={imagenMostrar}
               alt={producto.nombre}
-              className="w-full h-full object-cover object-center"
+              className="w-full h-full object-cover object-center transition-all duration-300"
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).src = '/hero-cyzone.jpg';
               }}
@@ -136,6 +138,19 @@ export function DetalleProductoModal({
               <span className="absolute top-3 left-3 bg-neutral-900 text-white text-[9px] uppercase font-bold tracking-widest px-2 py-0.5 shadow-md">
                 Nuevo Lanzamiento
               </span>
+            )}
+            {varianteSeleccionada && (
+              <div className="absolute bottom-3 right-3 bg-black/85 backdrop-blur-md text-white px-3 py-1.5 flex items-center gap-2 border border-white/20 shadow-lg">
+                {varianteSeleccionada.codigo_hex && (
+                  <span
+                    className="w-3.5 h-3.5 rounded-full border border-white/50 shadow-xs shrink-0"
+                    style={{ backgroundColor: varianteSeleccionada.codigo_hex }}
+                  />
+                )}
+                <span className="text-[11px] font-bold tracking-wide">
+                  Tono: {varianteSeleccionada.nombre}
+                </span>
+              </div>
             )}
           </div>
 

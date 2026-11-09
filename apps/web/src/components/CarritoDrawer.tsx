@@ -1,6 +1,7 @@
 'use client';
 
 import { useCarrito } from '@/context/CarritoContext';
+import { obtenerImagenProducto } from '@/lib/imagenesVariantes';
 import { X, Trash2, ShoppingBag, MessageCircle, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 
 interface DrawerProps {
@@ -92,7 +93,7 @@ export function CarritoDrawer({ abierto, onCerrar }: DrawerProps) {
                   >
                     <div className="relative w-16 h-16 bg-white border border-neutral-200 overflow-hidden shrink-0">
                       <img 
-                        src={it.varianteSeleccionada?.imagen_url || it.producto.imagen_principal} 
+                        src={obtenerImagenProducto(it.producto, it.varianteSeleccionada)} 
                         alt={it.producto.nombre} 
                         className="w-full h-full object-cover" 
                         onError={(e) => {
