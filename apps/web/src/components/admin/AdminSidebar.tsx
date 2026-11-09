@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, Tag, Layers, ArrowLeft, Sparkles } from 'lucide-react';
+import { Package, Tag, Layers, ArrowLeft, Sparkles, LogOut } from 'lucide-react';
+import { useAdminAuth } from '@/components/admin/AdminGuard';
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Productos', icon: Package },
@@ -12,9 +13,10 @@ const NAV_ITEMS = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const { logout } = useAdminAuth();
 
   return (
-    <aside className="w-56 bg-slate-900 min-h-screen flex flex-col py-5 px-3 shrink-0">
+    <aside className="w-56 bg-slate-900 min-h-screen flex flex-col py-5 px-3 shrink-0 border-r border-slate-800">
       {/* Brand */}
       <div className="flex items-center gap-2 px-3 mb-6">
         <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
@@ -49,14 +51,23 @@ export function AdminSidebar() {
         })}
       </nav>
 
-      {/* Footer: Volver al Catálogo */}
-      <Link
-        href="/"
-        className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-500 hover:text-white hover:bg-slate-800 transition-colors mt-4"
-      >
-        <ArrowLeft className="w-3.5 h-3.5" />
-        <span>Ver Catálogo</span>
-      </Link>
+      {/* Footer: Volver al Catálogo y Cerrar Sesión */}
+      <div className="pt-3 border-t border-slate-800/80 space-y-1">
+        <Link
+          href="/"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Ver Catálogo</span>
+        </Link>
+        <button
+          onClick={logout}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+          <span>Cerrar Sesión</span>
+        </button>
+      </div>
     </aside>
   );
 }
