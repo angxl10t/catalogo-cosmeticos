@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Producto, VarianteProducto } from '@/types/catalogo';
 import { useCarrito } from '@/context/CarritoContext';
-import { ShoppingBag, Check, Eye } from 'lucide-react';
+import { ShoppingBag, Check, Eye, Heart } from 'lucide-react';
 
 interface Props {
   producto: Producto;
@@ -16,6 +16,7 @@ export function ProductoCard({ producto, onVerDetalle }: Props) {
     producto.variantes && producto.variantes.length > 0 ? producto.variantes[0] : undefined
   );
   const [agregadoAnim, setAgregadoAnim] = useState(false);
+  const [esFavorito, setEsFavorito] = useState(false);
 
   const tieneOferta = Boolean(producto.precio_oferta && producto.precio_oferta < producto.precio_regular);
   const precioActual = (producto.precio_oferta ?? producto.precio_regular) + (varianteSeleccionada?.precio_adicional ?? 0);
@@ -35,112 +36,133 @@ export function ProductoCard({ producto, onVerDetalle }: Props) {
   return (
     <div
       onClick={() => onVerDetalle(producto)}
-      className="group bg-white rounded-3xl overflow-hidden border border-slate-100/80 shadow-xs hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col cursor-pointer"
+      className="group bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col cursor-pointer relative"
     >
-      {/* Imagen Principal */}
-      <div className="relative aspect-square w-full overflow-hidden bg-slate-50">
+      {/* Botón Favorito Estilo Cyzone */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setEsFavorito(!esFavorito);
+        }}
+        className={`absolute top-3 right-3 z-20 w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+          esFavorito
+            ? 'bg-rose-50 text-rose-600 shadow-sm'
+            : 'bg-white/80 hover:bg-white text-slate-400 hover:text-rose-500 shadow-2xs'
+        }`}
+      >
+        <Heart className={`w-4 h-4 ${esFavorito ? 'fill-rose-500 text-rose-500' : ''}`} />
+      </button>
+
+      {/* Imagen Principal con zoom suave */}
+      <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-b from-rose-50/30 to-slate-50">
         <img
           src={imagenActual}
           alt={producto.nombre}
-          className="w-full h-full object-cover object-center group-hover:scale-108 transition-transform duration-500 ease-out"
+          className="w-full h-full object-cover object-center group-hover:scale-106 transition-transform duration-500 ease-out"
           loading="lazy"
         />
 
-        {/* Badges de Oferta o Nuevo */}
-        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10 pointer-events-none">
+        {/* Badges de Oferta y Studio Look al estilo Cyzone */}
+        <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10 pointer-events-none">
           {tieneOferta && (
-            <span className="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider">
+            <span className="bg-gradient-to-r from-rose-600 to-pink-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-md uppercase tracking-wider">
               -{porcentajeDescuento}% OFF
             </span>
           )}
           {producto.es_nuevo && (
-            <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs uppercase tracking-wide">
-              Nuevo
+            <span className="bg-purple-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs uppercase tracking-wide">
+              Top Look
             </span>
           )}
         </div>
 
-        {/* Overlay Botón Ver Detalle en Hover */}
-        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-          <span className="bg-white/90 backdrop-blur-xs text-slate-900 text-xs font-bold py-1.5 px-3 rounded-full shadow-lg flex items-center gap-1.5 transform translate-y-2 group-hover:translate-y-0 transition-transform">
-            <Eye className="w-3.5 h-3.5 text-blue-600" />
-            <span>Ver detalle</span>
+        {/* Vista rápida en hover */}
+        <div className="absolute inset-x-0 bottom-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center">
+          <span className="w-full bg-white/95 backdrop-blur-md text-slate-900 text-[11px] font-bold py-1.5 rounded-full shadow-md text-center flex items-center justify-center gap-1.5">
+            <Eye className="w-3.5 h-3.5 text-rose-600" />
+            <span>Ver detalles & swatches</span>
           </span>
         </div>
       </div>
 
-      {/* Contenido / Datos */}
+      {/* Contenido / Datos del producto */}
       <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between space-y-3">
         <div>
-          {/* Marca */}
-          {producto.marca && (
-            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50/80 px-2 py-0.5 rounded-md inline-block mb-1">
-              {producto.marca.nombre}
+          {/* Marca / Línea */}
+          <div className="flex items-center justify-between gap-1 mb-1">
+            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-rose-600">
+              {producto.marca?.nombre ?? 'CYZONE'}
             </span>
-          )}
+            {producto.codigo_referencia && (
+              <span className="text-[9px] text-slate-400 font-mono">
+                {producto.codigo_referencia}
+              </span>
+            )}
+          </div>
 
-          {/* Título */}
-          <h3 className="font-bold text-slate-800 text-xs sm:text-sm line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
+          {/* Título de producto */}
+          <h3 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-2 leading-snug group-hover:text-rose-600 transition-colors">
             {producto.nombre}
           </h3>
 
-          {/* Selector de Variantes / Tonos si tiene */}
+          {/* Selector de Variantes / Swatches de color */}
           {producto.variantes && producto.variantes.length > 0 && (
-            <div className="mt-2" onClick={(e) => e.stopPropagation()}>
-              <span className="text-[10px] text-slate-400 font-medium block mb-1 truncate">
-                Tono: <strong className="text-slate-700">{varianteSeleccionada?.nombre}</strong>
-              </span>
-              <div className="flex flex-wrap gap-1">
-                {producto.variantes.map((v) => (
+            <div className="mt-2.5" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between text-[10px] mb-1">
+                <span className="text-slate-400 font-medium">Tono:</span>
+                <span className="font-bold text-slate-700 truncate max-w-[110px]">
+                  {varianteSeleccionada?.nombre}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {producto.variantes.slice(0, 5).map((v) => (
                   <button
                     key={v.id}
                     onClick={() => setVarianteSeleccionada(v)}
                     title={v.nombre}
-                    className={`h-5 px-1.5 rounded-full text-[9px] font-medium flex items-center gap-1 border transition-all ${
+                    className={`w-4 h-4 rounded-full border transition-all ${
                       varianteSeleccionada?.id === v.id
-                        ? 'border-blue-600 ring-1 ring-blue-600 bg-blue-50 text-blue-700 font-bold'
-                        : 'border-slate-200 hover:border-slate-300 text-slate-600 bg-white'
+                        ? 'ring-2 ring-rose-500 ring-offset-1 scale-110'
+                        : 'border-black/15 hover:scale-105'
                     }`}
-                  >
-                    {v.codigo_hex && (
-                      <span
-                        className="w-2.5 h-2.5 rounded-full border border-black/15 inline-block shrink-0"
-                        style={{ backgroundColor: v.codigo_hex }}
-                      />
-                    )}
-                    <span className="max-w-[70px] truncate">{v.nombre}</span>
-                  </button>
+                    style={{ backgroundColor: v.codigo_hex ?? '#e11d48' }}
+                  />
                 ))}
+                {producto.variantes.length > 5 && (
+                  <span className="text-[9px] text-slate-400 font-bold ml-0.5">
+                    +{producto.variantes.length - 5}
+                  </span>
+                )}
               </div>
             </div>
           )}
         </div>
 
-        {/* Precios & Botón Agregar */}
+        {/* Precios & Botón de Compra */}
         <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
           <div>
             {tieneOferta && (
-              <span className="text-[11px] text-slate-400 line-through block leading-none">
+              <span className="text-[11px] text-slate-400 line-through block leading-none font-medium">
                 S/ {producto.precio_regular.toFixed(2)}
               </span>
             )}
-            <span className="text-sm sm:text-base font-black text-slate-900 tracking-tight">
+            <span className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-none block">
               S/ {precioActual.toFixed(2)}
             </span>
           </div>
 
           <button
             onClick={handleAgregar}
-            className={`flex items-center gap-1 text-[11px] font-bold py-2 px-3 rounded-xl transition-all shadow-xs active:scale-95 shrink-0 ${
+            className={`flex items-center gap-1.5 text-xs font-bold py-2 px-3 sm:px-3.5 rounded-full transition-all shadow-xs active:scale-95 shrink-0 ${
               agregadoAnim
                 ? 'bg-emerald-600 text-white shadow-emerald-500/20'
-                : 'bg-slate-900 hover:bg-blue-600 text-white'
+                : 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/20'
             }`}
           >
             {agregadoAnim ? (
               <>
                 <Check className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Listo</span>
+                <span className="hidden sm:inline">¡Listo!</span>
               </>
             ) : (
               <>

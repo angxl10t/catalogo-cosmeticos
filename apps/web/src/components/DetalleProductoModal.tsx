@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Producto, VarianteProducto } from '@/types/catalogo';
 import { useCarrito } from '@/context/CarritoContext';
-import { X, ShoppingBag, Check, ShieldCheck, Sparkles, Send } from 'lucide-react';
+import { X, ShoppingBag, Check, ShieldCheck, Sparkles, Send, Heart, Truck } from 'lucide-react';
 
 interface Props {
   producto: Producto | null;
@@ -23,6 +23,9 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
   const tieneOferta = Boolean(producto.precio_oferta && producto.precio_oferta < producto.precio_regular);
   const precioUnitario = (producto.precio_oferta ?? producto.precio_regular) + (varianteSeleccionada?.precio_adicional ?? 0);
   const ahorro = tieneOferta ? producto.precio_regular - (producto.precio_oferta ?? 0) : 0;
+  const porcentaje = tieneOferta
+    ? Math.round(((producto.precio_regular - (producto.precio_oferta ?? 0)) / producto.precio_regular) * 100)
+    : 0;
 
   const handleAgregar = () => {
     agregarProducto(producto, varianteSeleccionada);
@@ -39,34 +42,34 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
         onClick={onCerrar} 
       />
 
-      <div className="relative bg-white rounded-3xl max-w-xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden border border-slate-100 z-10 text-slate-800">
+      <div className="relative bg-white rounded-3xl max-w-xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden border border-rose-100 z-10 text-slate-800">
         {/* Botón cerrar */}
         <button
           onClick={onCerrar}
-          className="absolute top-3 right-3 z-20 p-2 rounded-full bg-white/80 hover:bg-white text-slate-500 shadow-md backdrop-blur-xs transition-all"
+          className="absolute top-3.5 right-3.5 z-20 p-2 rounded-full bg-white/90 hover:bg-white text-slate-500 shadow-md transition-all"
         >
           <X className="w-4 h-4" />
         </button>
 
         <div className="overflow-y-auto p-5 sm:p-6 space-y-5">
           {/* Imagen Hero */}
-          <div className="relative aspect-square sm:aspect-4/3 w-full rounded-2xl overflow-hidden bg-slate-50 border border-slate-100">
+          <div className="relative aspect-square sm:aspect-4/3 w-full rounded-2xl overflow-hidden bg-gradient-to-b from-rose-50/50 to-slate-50 border border-slate-100">
             <img
               src={imagenMostrar}
               alt={producto.nombre}
               className="w-full h-full object-cover object-center"
             />
 
-            {/* Badges */}
+            {/* Badges Estilo Cyzone */}
             <div className="absolute top-3 left-3 flex flex-col gap-1.5">
               {tieneOferta && (
-                <span className="bg-rose-500 text-white text-[11px] font-black px-2.5 py-1 rounded-full shadow-md uppercase tracking-wider">
-                  Ahorras S/ {ahorro.toFixed(2)}
+                <span className="bg-gradient-to-r from-rose-600 to-pink-600 text-white text-xs font-black px-3 py-1 rounded-full shadow-md uppercase tracking-wider">
+                  ¡Ahorras S/ {ahorro.toFixed(2)}! (-{porcentaje}%)
                 </span>
               )}
               {producto.es_nuevo && (
-                <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm uppercase tracking-wide">
-                  Nuevo
+                <span className="bg-purple-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs uppercase tracking-wide">
+                  Favorito de Campaña
                 </span>
               )}
             </div>
@@ -76,42 +79,42 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               {producto.marca && (
-                <span className="text-xs font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
+                <span className="text-xs font-black uppercase tracking-widest text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg">
                   {producto.marca.nombre}
                 </span>
               )}
               {producto.codigo_referencia && (
                 <span className="text-[11px] text-slate-400 font-mono">
-                  Ref: {producto.codigo_referencia}
+                  Código: {producto.codigo_referencia}
                 </span>
               )}
             </div>
 
-            <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 leading-tight">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">
               {producto.nombre}
             </h2>
 
             {/* Precios */}
-            <div className="flex items-baseline gap-2.5 pt-1">
-              <span className="text-2xl font-black text-slate-900">
+            <div className="flex items-baseline gap-3 pt-1">
+              <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                 S/ {precioUnitario.toFixed(2)}
               </span>
               {tieneOferta && (
-                <span className="text-sm text-slate-400 line-through">
+                <span className="text-sm text-slate-400 line-through font-medium">
                   S/ {producto.precio_regular.toFixed(2)}
                 </span>
               )}
             </div>
           </div>
 
-          {/* Variantes / Tonos */}
+          {/* Variantes / Swatches de Tonos */}
           {producto.variantes && producto.variantes.length > 0 && (
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+            <div className="p-4 bg-rose-50/40 rounded-2xl border border-rose-100/70 space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-800">
-                  Selecciona Tono o Presentación:
+                  Elige tu Tono / Swatch:
                 </span>
-                <span className="text-xs text-blue-600 font-bold">
+                <span className="text-xs text-rose-600 font-extrabold">
                   {varianteSeleccionada?.nombre}
                 </span>
               </div>
@@ -123,9 +126,9 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
                     <button
                       key={v.id}
                       onClick={() => setVarianteSeleccionada(v)}
-                      className={`flex items-center gap-2 py-1.5 px-3 rounded-xl text-xs font-semibold border transition-all ${
+                      className={`flex items-center gap-2 py-1.5 px-3 rounded-full text-xs font-bold border transition-all ${
                         esActivo
-                          ? 'border-blue-600 bg-blue-50 text-blue-700 ring-2 ring-blue-500/20 shadow-xs'
+                          ? 'border-rose-600 bg-white text-rose-600 ring-2 ring-rose-500/30 shadow-xs'
                           : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                       }`}
                     >
@@ -147,32 +150,32 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
           {producto.descripcion && (
             <div className="space-y-1">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Detalles del Producto
+                Beneficios & Modo de Uso
               </h4>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
                 {producto.descripcion}
               </p>
             </div>
           )}
 
-          {/* Garantías de confianza */}
+          {/* Beneficios de compra Cyzone / Belcorp */}
           <div className="grid grid-cols-2 gap-3 pt-2">
-            <div className="flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl text-[11px] text-slate-600">
+            <div className="flex items-center gap-2 p-2.5 bg-slate-50 rounded-2xl text-[11px] text-slate-700 font-medium">
               <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>100% Original & Garantizado</span>
+              <span>Original directo de catálogo</span>
             </div>
-            <div className="flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl text-[11px] text-slate-600">
-              <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
-              <span>Coordinación directa</span>
+            <div className="flex items-center gap-2 p-2.5 bg-slate-50 rounded-2xl text-[11px] text-slate-700 font-medium">
+              <Truck className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>Entrega rápida y segura</span>
             </div>
           </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-100 flex items-center gap-3">
+        <div className="p-4 sm:p-5 bg-white border-t border-slate-100 flex items-center gap-3">
           <button
             onClick={handleAgregar}
-            className={`flex-1 flex items-center justify-center gap-2 font-bold py-3 px-4 rounded-2xl text-xs shadow-md transition-all active:scale-[0.98] ${
+            className={`flex-1 flex items-center justify-center gap-2 font-bold py-3.5 px-4 rounded-full text-xs shadow-md transition-all active:scale-[0.98] ${
               agregadoAnim
                 ? 'bg-emerald-600 text-white'
                 : 'bg-slate-900 hover:bg-slate-800 text-white'
@@ -181,12 +184,12 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
             {agregadoAnim ? (
               <>
                 <Check className="w-4 h-4" />
-                <span>¡Agregado al Pedido!</span>
+                <span>¡Agregado a tu Bolsa!</span>
               </>
             ) : (
               <>
                 <ShoppingBag className="w-4 h-4" />
-                <span>Agregar al Pedido</span>
+                <span>Agregar a la Bolsa</span>
               </>
             )}
           </button>
@@ -197,11 +200,11 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
               onCerrar();
               enviarPedidoWhatsApp();
             }}
-            className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-2xl text-xs shadow-md transition-all active:scale-[0.98]"
+            className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold py-3.5 px-5 rounded-full text-xs shadow-md shadow-emerald-600/25 transition-all active:scale-[0.98]"
             title="Pedir directamente este producto por WhatsApp"
           >
             <Send className="w-4 h-4" />
-            <span className="hidden sm:inline">Comprar Ya</span>
+            <span className="hidden sm:inline">Pedir por WhatsApp</span>
           </button>
         </div>
       </div>
