@@ -241,16 +241,29 @@ export function PromocionFormModal({
         }),
       });
 
-      const data = await res.json();
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {
+        // respuesta no parseable como JSON
+      }
 
-      if (!res.ok || data.error) {
-        throw new Error(data.error || 'Error al guardar la promoción');
+      if (!res.ok || data?.error) {
+        const errorDetalle = data?.error || `Error del servidor (${res.status}): No se pudo registrar la promoción`;
+        throw new Error(errorDetalle);
       }
 
       onGuardado();
       onCerrar();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al guardar la promoción';
+      let msg = 'Error al guardar la promoción';
+      if (err instanceof Error) {
+        msg = err.message;
+      } else if (typeof err === 'object' && err !== null && 'message' in err) {
+        msg = String((err as any).message);
+      } else if (typeof err === 'string') {
+        msg = err;
+      }
       setErrorMsg(msg);
     } finally {
       setGuardando(false);

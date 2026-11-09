@@ -63,14 +63,35 @@ export default function PromocionesPage() {
         supabase ? supabase.from('categorias').select('*').order('nombre') : Promise.resolve({ data: [] }),
       ]);
 
-      if (Array.isArray(prodsRes) && prodsRes.length > 0) {
-        setProductos(prodsRes as Producto[]);
+      const listaProductos = Array.isArray(prodsRes) ? (prodsRes as Producto[]) : [];
+      if (listaProductos.length > 0) {
+        setProductos(listaProductos);
       }
-      if (marcasRes && marcasRes.data) {
+
+      // Marcas desde Supabase o extraídas de los productos
+      if (marcasRes && marcasRes.data && marcasRes.data.length > 0) {
         setMarcas(marcasRes.data as Marca[]);
+      } else if (listaProductos.length > 0) {
+        const marcasMap = new Map<string, Marca>();
+        listaProductos.forEach((p) => {
+          if (p.marca && p.marca.id) {
+            marcasMap.set(p.marca.id, p.marca);
+          }
+        });
+        setMarcas(Array.from(marcasMap.values()));
       }
-      if (catsRes && catsRes.data) {
+
+      // Categorías desde Supabase o extraídas de los productos
+      if (catsRes && catsRes.data && catsRes.data.length > 0) {
         setCategorias(catsRes.data as Categoria[]);
+      } else if (listaProductos.length > 0) {
+        const catsMap = new Map<string, Categoria>();
+        listaProductos.forEach((p) => {
+          if (p.categoria && p.categoria.id) {
+            catsMap.set(p.categoria.id, p.categoria);
+          }
+        });
+        setCategorias(Array.from(catsMap.values()));
       }
     } catch (err) {
       console.error('Error cargando catálogo para promociones:', err);
