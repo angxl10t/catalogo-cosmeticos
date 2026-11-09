@@ -52,3 +52,18 @@ export interface ItemCarrito {
   varianteSeleccionada?: VarianteProducto;
   cantidad: number;
 }
+
+export type TipoPromocion = 'PORCENTAJE' | 'MONTO_FIJO' | 'DOS_POR_UNO' | 'COMBO';
+
+export interface Promocion {
+  id: string;
+  titulo: string;
+  tipo: TipoPromocion;
+  valor_descuento: number;
+  fecha_inicio?: string | null;
+  fecha_fin?: string | null;
+  banner_url?: string | null;
+  activa: boolean;
+  created_at?: string;
+  productos?: { producto: Producto }[];
+}
