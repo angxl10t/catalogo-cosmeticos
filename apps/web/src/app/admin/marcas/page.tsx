@@ -110,7 +110,7 @@ function MarcaFormModal({
                       : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >
-                  {cat === 'COSMETICOS' ? '💄 Cosméticos' : '🔌 Electro Hogar'}
+                  {cat === 'COSMETICOS' ? 'Cosméticos & Belleza' : 'Electro Hogar'}
                 </button>
               ))}
             </div>
@@ -275,7 +275,7 @@ export default function MarcasPage() {
                         ? 'bg-pink-50 text-pink-700 border-pink-200'
                         : 'bg-cyan-50 text-cyan-700 border-cyan-200'
                     }`}>
-                      {marca.categoria_principal === 'COSMETICOS' ? '💄 Cosméticos' : '🔌 Electro Hogar'}
+                      {marca.categoria_principal === 'COSMETICOS' ? 'Cosméticos & Belleza' : 'Electro Hogar'}
                     </span>
                   </td>
                   <td className="py-3 px-5">

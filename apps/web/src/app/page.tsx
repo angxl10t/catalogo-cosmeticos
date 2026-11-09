@@ -49,6 +49,7 @@ function CatalogoPrincipal() {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string>('todas');
   const [busqueda, setBusqueda] = useState<string>('');
   const [orden, setOrden] = useState<Ordenamiento>('destacados');
+  const [filtroCurado, setFiltroCurado] = useState<'todos' | 'destacados' | 'nuevos'>('todos');
   const [carritoAbierto, setCarritoAbierto] = useState<boolean>(false);
   const [cargando, setCargando] = useState<boolean>(true);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
@@ -115,13 +116,23 @@ function CatalogoPrincipal() {
   // Reiniciar paginación cuando cambia cualquier filtro
   useEffect(() => {
     setLimiteVisible(PASO_PAGINACION);
-  }, [marcaSeleccionada, categoriaSeleccionada, busqueda, promocionActivaFiltro, orden]);
+  }, [marcaSeleccionada, categoriaSeleccionada, busqueda, promocionActivaFiltro, orden, filtroCurado]);
 
   // Conteo de productos por marca para mostrar en los botones
   const conteoPorMarca = useMemo(() => {
     const map: Record<string, number> = {};
     productos.forEach((p) => {
       const slug = p.marca?.slug || p.marca_id || 'otra';
+      map[slug] = (map[slug] || 0) + 1;
+    });
+    return map;
+  }, [productos]);
+
+  // Conteo de productos por categoría para los selectores
+  const conteoPorCategoria = useMemo(() => {
+    const map: Record<string, number> = {};
+    productos.forEach((p) => {
+      const slug = p.categoria?.slug || p.categoria_id || 'otra';
       map[slug] = (map[slug] || 0) + 1;
     });
     return map;
@@ -153,10 +164,15 @@ function CatalogoPrincipal() {
         p.categoria?.slug === categoriaSeleccionada ||
         p.categoria_id === categoriaSeleccionada;
 
+      const coincideCurado =
+        filtroCurado === 'todos' ||
+        (filtroCurado === 'destacados' && p.es_destacado) ||
+        (filtroCurado === 'nuevos' && p.es_nuevo);
+
       const texto = `${p.nombre} ${p.descripcion ?? ''} ${p.marca?.nombre ?? ''} ${p.codigo_referencia ?? ''}`.toLowerCase();
       const coincideBusqueda = texto.includes(busqueda.toLowerCase());
 
-      return coincideMarca && coincideCategoria && coincideBusqueda;
+      return coincideMarca && coincideCategoria && coincideCurado && coincideBusqueda;
     });
 
     return filtrados.sort((a, b) => {
@@ -180,7 +196,7 @@ function CatalogoPrincipal() {
       }
       return 0;
     });
-  }, [productos, marcaSeleccionada, categoriaSeleccionada, busqueda, promoProductIdsSet, orden]);
+  }, [productos, marcaSeleccionada, categoriaSeleccionada, busqueda, promoProductIdsSet, orden, filtroCurado]);
 
   const productosVisibles = useMemo(() => {
     return productosFiltrados.slice(0, limiteVisible);
@@ -203,12 +219,14 @@ function CatalogoPrincipal() {
     marcaSeleccionada !== 'todas' ||
     categoriaSeleccionada !== 'todas' ||
     promocionActivaFiltro !== null ||
-    busqueda.trim() !== '';
+    busqueda.trim() !== '' ||
+    filtroCurado !== 'todos';
 
   const limpiarTodosFiltros = () => {
     setMarcaSeleccionada('todas');
     setCategoriaSeleccionada('todas');
     setPromocionActivaFiltro(null);
+    setFiltroCurado('todos');
     setBusqueda('');
   };
 
@@ -277,9 +295,39 @@ function CatalogoPrincipal() {
                 Catálogo LuKa
               </span>
               <span className="text-neutral-300 hidden sm:inline">|</span>
-              <span className="text-xs text-neutral-500 font-semibold uppercase tracking-wider hidden sm:inline">
-                Filtrar por Marca
-              </span>
+              {/* Colecciones Rápidas Curadas */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  onClick={() => setFiltroCurado('todos')}
+                  className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-all border cursor-pointer ${
+                    filtroCurado === 'todos'
+                      ? 'bg-black text-white border-black shadow-xs'
+                      : 'bg-white border-neutral-300 text-neutral-700 hover:border-black'
+                  }`}
+                >
+                  Todos
+                </button>
+                <button
+                  onClick={() => setFiltroCurado(filtroCurado === 'destacados' ? 'todos' : 'destacados')}
+                  className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-all border cursor-pointer ${
+                    filtroCurado === 'destacados'
+                      ? 'bg-black text-white border-black shadow-xs'
+                      : 'bg-white border-neutral-300 text-neutral-700 hover:border-black'
+                  }`}
+                >
+                  Destacados
+                </button>
+                <button
+                  onClick={() => setFiltroCurado(filtroCurado === 'nuevos' ? 'todos' : 'nuevos')}
+                  className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-all border cursor-pointer ${
+                    filtroCurado === 'nuevos'
+                      ? 'bg-black text-white border-black shadow-xs'
+                      : 'bg-white border-neutral-300 text-neutral-700 hover:border-black'
+                  }`}
+                >
+                  Novedades
+                </button>
+              </div>
             </div>
 
             {/* Controles de Orden y Conteo */}
@@ -315,6 +363,18 @@ function CatalogoPrincipal() {
                 <Filter className="w-3 h-3" />
                 Filtros activos:
               </span>
+              {filtroCurado !== 'todos' && (
+                <span className="inline-flex items-center gap-1 bg-black text-white px-2 py-0.5 text-[11px] font-semibold">
+                  <span>Colección: {filtroCurado === 'destacados' ? 'Destacados LuKa' : 'Nuevos Lanzamientos'}</span>
+                  <button
+                    onClick={() => setFiltroCurado('todos')}
+                    className="hover:text-neutral-300 ml-0.5 cursor-pointer"
+                    title="Quitar filtro de colección"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
               {marcaSeleccionada !== 'todas' && (
                 <span className="inline-flex items-center gap-1 bg-black text-white px-2 py-0.5 text-[11px] font-semibold">
                   <span>Marca: {nombreMarcaActiva}</span>
@@ -374,8 +434,49 @@ function CatalogoPrincipal() {
             </div>
           )}
 
+          {/* Selector de Categorías */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 shrink-0 mr-1 hidden sm:inline">
+              Categoría:
+            </span>
+            <button
+              onClick={() => setCategoriaSeleccionada('todas')}
+              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider shrink-0 transition-all border cursor-pointer ${
+                categoriaSeleccionada === 'todas'
+                  ? 'bg-neutral-900 text-white border-neutral-900 shadow-xs'
+                  : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:border-black'
+              }`}
+            >
+              Todas ({productos.length})
+            </button>
+            {[
+              { slug: 'maquillaje', label: 'Maquillaje' },
+              { slug: 'fragancias', label: 'Perfumes' },
+              { slug: 'cuidado-facial', label: 'Skincare' },
+              { slug: 'electro-hogar', label: 'Electro Belleza' },
+            ].map((cat) => {
+              const count = conteoPorCategoria[cat.slug] ?? 0;
+              return (
+                <button
+                  key={cat.slug}
+                  onClick={() => setCategoriaSeleccionada(categoriaSeleccionada === cat.slug ? 'todas' : cat.slug)}
+                  className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider shrink-0 transition-all border cursor-pointer ${
+                    categoriaSeleccionada === cat.slug
+                      ? 'bg-neutral-900 text-white border-neutral-900 shadow-xs'
+                      : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:border-black'
+                  }`}
+                >
+                  {cat.label} ({count})
+                </button>
+              );
+            })}
+          </div>
+
           {/* Pills de marcas horizontales con contadores reales */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 shrink-0 mr-1 hidden sm:inline">
+              Marca:
+            </span>
             <button
               onClick={() => setMarcaSeleccionada('todas')}
               className={`px-4 py-2 text-xs font-bold uppercase tracking-wider shrink-0 transition-all border cursor-pointer ${

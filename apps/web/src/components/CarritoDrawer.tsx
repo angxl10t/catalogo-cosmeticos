@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { useCarrito } from '@/context/CarritoContext';
 import { obtenerImagenProducto } from '@/lib/imagenesVariantes';
-import { X, Trash2, ShoppingBag, MessageCircle, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { X, Trash2, ShoppingBag, MessageCircle, ArrowRight, ShieldCheck, Sparkles, Copy, Check } from 'lucide-react';
 
 interface DrawerProps {
   abierto: boolean;
@@ -11,6 +12,23 @@ interface DrawerProps {
 
 export function CarritoDrawer({ abierto, onCerrar }: DrawerProps) {
   const { items, totalItems, cambiarCantidad, eliminarItem, limpiarCarrito, consultarWhatsApp } = useCarrito();
+  const [copiadoLista, setCopiadoLista] = useState(false);
+
+  const handleCopiarTextoLista = async () => {
+    if (items.length === 0) return;
+    let txt = `Consulta de Catálogo LuKa (${totalItems} productos):\n\n`;
+    items.forEach((it) => {
+      const tono = it.varianteSeleccionada ? ` (Tono: ${it.varianteSeleccionada.nombre})` : '';
+      const cant = it.cantidad > 1 ? ` x${it.cantidad}` : '';
+      txt += `• ${it.producto.nombre}${tono}${cant}\n`;
+    });
+    txt += `\nCoordina disponibilidad y precio oficial con LuKa.`;
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(txt);
+      setCopiadoLista(true);
+      setTimeout(() => setCopiadoLista(false), 2200);
+    }
+  };
 
   if (!abierto) return null;
 
@@ -173,6 +191,14 @@ export function CarritoDrawer({ abierto, onCerrar }: DrawerProps) {
                   Se enviarán a <strong>LuKa</strong> tus <strong>{totalItems}</strong> productos con sus tonos y referencias para coordinar precios de campaña y entrega.
                 </p>
               </div>
+
+              <button
+                onClick={handleCopiarTextoLista}
+                className="w-full flex items-center justify-center gap-2 bg-white hover:bg-neutral-100 text-neutral-800 border border-neutral-300 font-bold py-2.5 px-3 text-xs tracking-wider uppercase transition-all cursor-pointer shadow-xs"
+              >
+                {copiadoLista ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiadoLista ? 'Lista Copiada al Portapapeles' : 'Copiar Texto de la Lista'}</span>
+              </button>
 
               <button
                 onClick={() => consultarWhatsApp()}

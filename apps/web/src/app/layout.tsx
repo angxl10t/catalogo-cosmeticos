@@ -20,7 +20,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://catalogo-cosmeticos.vercel.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://lukaperu.vercel.app'),
   title: "LuKa | Catálogo Oficial de Cosméticos & Belleza",
   description: "Catálogo digital exclusivo LuKa: Maquillaje, Fragancias, Cuidado Facial y Belleza de Cyzone, Ésika, L'BEL, Yanbal, Natura y Electro Hogar. Consulta precios y coordina tus pedidos directamente por WhatsApp.",
   keywords: ["LuKa", "Cyzone", "Ésika", "L'BEL", "Yanbal", "Unique", "Natura", "Cosméticos Perú", "Catálogo digital", "Maquillaje", "Perfumes"],

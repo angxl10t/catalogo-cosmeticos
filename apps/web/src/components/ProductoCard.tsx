@@ -57,6 +57,16 @@ export function ProductoCard({ producto, onVerDetalle }: Props) {
               Destacado
             </span>
           )}
+          {producto.stock <= 3 && producto.stock > 0 && (
+            <span className="bg-amber-950/90 text-amber-200 text-[9px] font-bold px-2 py-0.5 tracking-wider uppercase border border-amber-500/30">
+              Últimas {producto.stock} un.
+            </span>
+          )}
+          {producto.stock === 0 && (
+            <span className="bg-neutral-900/90 text-neutral-300 text-[9px] font-bold px-2 py-0.5 tracking-wider uppercase">
+              Agotado
+            </span>
+          )}
         </div>
 
         {/* Badge de Tono Seleccionado sobre la imagen */}

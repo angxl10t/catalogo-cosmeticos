@@ -17,7 +17,9 @@ import {
   ShoppingBag,
   ChevronLeft,
   ChevronRight,
-  CheckCircle2
+  CheckCircle2,
+  Download,
+  AlertTriangle
 } from 'lucide-react';
 
 const ELEMENTOS_POR_PAGINA = 25;
@@ -29,6 +31,8 @@ export default function AdminDashboardPage() {
   const [cargando, setCargando] = useState<boolean>(true);
   const [busqueda, setBusqueda] = useState<string>('');
   const [marcaFiltro, setMarcaFiltro] = useState<string>('todas');
+  const [stockFiltro, setStockFiltro] = useState<'todos' | 'critico' | 'agotados' | 'optimo'>('todos');
+  const [estadoFiltro, setEstadoFiltro] = useState<'todos' | 'activos' | 'pausados'>('todos');
   const [paginaActual, setPaginaActual] = useState<number>(1);
   const [mensajeAlerta, setMensajeAlerta] = useState<string | null>(null);
 
@@ -129,7 +133,9 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     setPaginaActual(1);
-  }, [busqueda, marcaFiltro]);
+  }, [busqueda, marcaFiltro, stockFiltro, estadoFiltro]);
+
+  const totalStockBajo = productos.filter((p) => p.stock <= 3).length;
 
   const productosFiltrados = productos.filter((p) => {
     const coincideTexto = `${p.nombre} ${p.codigo_referencia ?? ''} ${p.marca?.nombre ?? ''}`
@@ -139,8 +145,46 @@ export default function AdminDashboardPage() {
       marcaFiltro === 'todas' ||
       p.marca?.slug === marcaFiltro ||
       p.marca_id === marcaFiltro;
-    return coincideTexto && coincideMarca;
+    const coincideStock =
+      stockFiltro === 'todos' ||
+      (stockFiltro === 'critico' && p.stock <= 3 && p.stock > 0) ||
+      (stockFiltro === 'agotados' && p.stock === 0) ||
+      (stockFiltro === 'optimo' && p.stock > 3);
+    const coincideEstado =
+      estadoFiltro === 'todos' ||
+      (estadoFiltro === 'activos' && p.activo) ||
+      (estadoFiltro === 'pausados' && !p.activo);
+
+    return coincideTexto && coincideMarca && coincideStock && coincideEstado;
   });
+
+  const handleExportarCSV = () => {
+    if (productosFiltrados.length === 0) return;
+    let csv = '\uFEFF';
+    csv += 'Referencia,Producto,Marca,Categoria,Stock,Estado,Precio Regular,Precio Oferta\n';
+    productosFiltrados.forEach((p) => {
+      const ref = `"${(p.codigo_referencia || '').replace(/"/g, '""')}"`;
+      const nom = `"${p.nombre.replace(/"/g, '""')}"`;
+      const mar = `"${(p.marca?.nombre || '').replace(/"/g, '""')}"`;
+      const cat = `"${(p.categoria?.nombre || '').replace(/"/g, '""')}"`;
+      const stk = p.stock ?? 0;
+      const est = p.activo ? 'Visible' : 'Pausado';
+      const pReg = (p.precio_regular || 0).toFixed(2);
+      const pOfe = p.precio_oferta ? p.precio_oferta.toFixed(2) : '';
+      csv += `${ref},${nom},${mar},${cat},${stk},${est},${pReg},${pOfe}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `inventario_luka_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setMensajeAlerta('Inventario exportado a CSV con éxito.');
+    setTimeout(() => setMensajeAlerta(null), 3000);
+  };
 
   const totalPaginas = Math.ceil(productosFiltrados.length / ELEMENTOS_POR_PAGINA) || 1;
   const inicioItem = (paginaActual - 1) * ELEMENTOS_POR_PAGINA;
@@ -171,7 +215,7 @@ export default function AdminDashboardPage() {
       {/* Main Container */}
       <main className="max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 flex-1">
         {/* Barra de Ajuste de WhatsApp & Métricas */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
               <Package className="w-5 h-5" />
@@ -191,6 +235,25 @@ export default function AdminDashboardPage() {
               <span className="text-xl font-extrabold text-slate-900">
                 {productos.filter((p) => p.activo).length}
               </span>
+            </div>
+          </div>
+
+          {/* Stock Crítico (Interactivo) */}
+          <div
+            onClick={() => setStockFiltro(stockFiltro === 'critico' ? 'todos' : 'critico')}
+            className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-xs flex items-center gap-3 ${
+              stockFiltro === 'critico'
+                ? 'bg-amber-50 border-amber-300 ring-2 ring-amber-400'
+                : 'bg-white border-slate-200/80 hover:border-amber-300'
+            }`}
+            title="Filtrar por productos con stock crítico (≤ 3 unidades)"
+          >
+            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-xs text-slate-400 font-medium block">Stock Crítico (≤ 3)</span>
+              <span className="text-xl font-extrabold text-amber-900">{totalStockBajo}</span>
             </div>
           </div>
 
@@ -215,7 +278,7 @@ export default function AdminDashboardPage() {
             <button
               onClick={handleGuardarTelefono}
               disabled={guardandoPhone}
-              className="bg-slate-900 hover:bg-slate-800 text-white p-2 rounded-xl text-xs font-semibold shrink-0"
+              className="bg-slate-900 hover:bg-slate-800 text-white p-2 rounded-xl text-xs font-semibold shrink-0 cursor-pointer"
               title="Guardar Teléfono"
             >
               <Save className="w-4 h-4" />
@@ -226,7 +289,7 @@ export default function AdminDashboardPage() {
         {/* Buscador & Tabla de Productos */}
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
           {/* Header de tabla */}
-          <div className="p-4 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="p-4 sm:p-6 border-b border-slate-100 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
             <div>
               <h2 className="font-bold text-base text-slate-900">Inventario y Catálogo</h2>
               <p className="text-xs text-slate-400">
@@ -234,11 +297,12 @@ export default function AdminDashboardPage() {
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+              {/* Filtro Marca */}
               <select
                 value={marcaFiltro}
                 onChange={(e) => setMarcaFiltro(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-blue-500 cursor-pointer"
+                className="bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-2.5 py-2 text-xs font-semibold outline-none focus:border-blue-500 cursor-pointer"
               >
                 <option value="todas">Todas las marcas ({productos.length})</option>
                 {marcas.map((m) => (
@@ -248,16 +312,50 @@ export default function AdminDashboardPage() {
                 ))}
               </select>
 
-              <div className="w-full sm:w-64 relative">
+              {/* Filtro Stock */}
+              <select
+                value={stockFiltro}
+                onChange={(e) => setStockFiltro(e.target.value as any)}
+                className="bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-2.5 py-2 text-xs font-semibold outline-none focus:border-blue-500 cursor-pointer"
+              >
+                <option value="todos">Todo el stock</option>
+                <option value="critico">Stock crítico (≤ 3)</option>
+                <option value="agotados">Agotados (0)</option>
+                <option value="optimo">Stock óptimo (&gt; 3)</option>
+              </select>
+
+              {/* Filtro Estado */}
+              <select
+                value={estadoFiltro}
+                onChange={(e) => setEstadoFiltro(e.target.value as any)}
+                className="bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-2.5 py-2 text-xs font-semibold outline-none focus:border-blue-500 cursor-pointer"
+              >
+                <option value="todos">Todos los estados</option>
+                <option value="activos">Solo visibles</option>
+                <option value="pausados">Solo pausados</option>
+              </select>
+
+              {/* Buscador */}
+              <div className="w-full sm:w-52 relative">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="Buscar por nombre, código..."
+                  placeholder="Buscar producto, ref..."
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
                   className="w-full pl-9 pr-4 py-2 bg-slate-50 rounded-xl text-xs border border-slate-200 outline-none focus:border-blue-500"
                 />
               </div>
+
+              {/* Botón Exportar CSV */}
+              <button
+                onClick={handleExportarCSV}
+                title="Exportar inventario actual a archivo CSV (Excel)"
+                className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>CSV</span>
+              </button>
             </div>
           </div>
 
