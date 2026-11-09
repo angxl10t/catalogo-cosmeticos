@@ -9,7 +9,8 @@ import { CarritoDrawer } from '@/components/CarritoDrawer';
 import { StickyBottomBar } from '@/components/StickyBottomBar';
 import { DetalleProductoModal } from '@/components/DetalleProductoModal';
 import { CarritoProvider } from '@/context/CarritoContext';
-import { Sparkles, Tag, AlertCircle, Flame, ShieldCheck, Heart, ArrowRight } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import Image from 'next/image';
 
 export default function HomePage() {
   return (
@@ -23,6 +24,7 @@ function CatalogoPrincipal() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);
   const [marcaSeleccionada, setMarcaSeleccionada] = useState<string>('todas');
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string>('todas');
   const [busqueda, setBusqueda] = useState<string>('');
   const [carritoAbierto, setCarritoAbierto] = useState<boolean>(false);
   const [cargando, setCargando] = useState<boolean>(true);
@@ -42,141 +44,144 @@ function CatalogoPrincipal() {
     cargarDatos();
   }, []);
 
-  // Filtro por marca y búsqueda
+  // Filtro compuesto: marca + categoría del topbar + búsqueda
   const productosFiltrados = productos.filter((p) => {
     const coincideMarca =
       marcaSeleccionada === 'todas' ||
       p.marca?.slug === marcaSeleccionada ||
       p.marca_id === marcaSeleccionada;
 
+    const coincideCategoria =
+      categoriaSeleccionada === 'todas' ||
+      p.categoria?.slug === categoriaSeleccionada ||
+      p.categoria_id === categoriaSeleccionada;
+
     const texto = `${p.nombre} ${p.descripcion ?? ''} ${p.marca?.nombre ?? ''}`.toLowerCase();
     const coincideBusqueda = texto.includes(busqueda.toLowerCase());
 
-    return coincideMarca && coincideBusqueda;
+    return coincideMarca && coincideCategoria && coincideBusqueda;
   });
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] flex flex-col font-sans text-slate-800 pb-20 sm:pb-0">
+    <div className="min-h-screen bg-white flex flex-col font-sans text-neutral-900 pb-20 sm:pb-0">
+      {/* Topbar estilo Cyzone con enlaces y logos de Belcorp */}
       <Navbar
         onAbrirCarrito={() => setCarritoAbierto(true)}
         busqueda={busqueda}
         onCambioBusqueda={setBusqueda}
+        categoriaActiva={categoriaSeleccionada}
+        onFiltrarCategoria={(cat) => {
+          setCategoriaSeleccionada(cat === categoriaSeleccionada ? 'todas' : cat);
+          const el = document.getElementById('catalogo-seccion');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }}
       />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3.5 sm:px-6 py-4 sm:py-6 space-y-8">
+      <main className="flex-1 w-full space-y-8">
         {/* Banner Informativo Supabase en caso de mock */}
         {!isSupabaseConfigured && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-3.5 flex items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>
-                <strong>Modo Demo:</strong> Mostrando catálogo mock. Conecta tu Supabase para sincronizar datos reales.
-              </span>
+          <div className="max-w-7xl mx-auto px-4 pt-4">
+            <div className="bg-neutral-100 border border-neutral-300 text-neutral-800 p-3 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-neutral-600 shrink-0" />
+                <span>
+                  <strong>Modo Demostración:</strong> Viendo catálogo con datos locales. Conecta tu Supabase para sincronizar inventario real.
+                </span>
+              </div>
             </div>
           </div>
         )}
 
-        {/* Hero Banner Vibrante estilo Cyzone "Crea tu Look" */}
-        <section className="bg-gradient-to-r from-rose-600 via-pink-600 to-purple-700 text-white rounded-3xl p-6 sm:p-10 shadow-xl shadow-rose-600/15 relative overflow-hidden">
-          <div className="relative z-10 max-w-2xl space-y-4">
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider text-white border border-white/20">
-              <Flame className="w-4 h-4 text-amber-300 fill-amber-300" />
-              <span>Campaña Belcorp & Tendencias 2026</span>
-            </div>
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-              Todo lo que necesitas para armar tu look ✨
-            </h1>
-            <p className="text-xs sm:text-base text-rose-100 font-medium leading-relaxed max-w-lg">
-              Descubre las líneas top como <strong>Studio Look</strong> de Cyzone, fragancias <strong>Ccori</strong> de Unique y cuidado <strong>Ekos</strong> de Natura con promociones exclusivas.
-            </p>
-            <div className="pt-2 flex flex-wrap gap-3">
-              <a
-                href="#catalogo-seccion"
-                className="bg-white text-rose-600 hover:bg-rose-50 text-xs sm:text-sm font-black px-6 py-3 rounded-full shadow-lg transition-transform active:scale-95 inline-flex items-center gap-2"
-              >
-                <span>Explorar Productos</span>
-                <ArrowRight className="w-4 h-4" />
-              </a>
-              <div className="inline-flex items-center gap-2 text-white/90 text-xs font-semibold px-3 py-2 bg-black/10 backdrop-blur-xs rounded-full">
-                <ShieldCheck className="w-4 h-4 text-emerald-300" />
-                <span>Productos 100% Originales</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Decoración de fondo */}
-          <div className="absolute right-0 top-0 bottom-0 w-2/5 bg-radial from-white/10 via-transparent to-transparent pointer-events-none" />
+        {/* Hero Banner Oficial Cyzone - "IN LOVE POTION ENCIENDE LA MAGIA" */}
+        <section className="relative w-full bg-black overflow-hidden aspect-16/7 sm:aspect-21/9 max-h-[560px]">
+          <Image
+            src="/hero-cyzone.jpg"
+            alt="Cyzone In Love Potion - Enciende la magia"
+            fill
+            priority
+            className="object-cover object-center"
+            sizes="100vw"
+          />
+          {/* Botón flotante para interactuar directamente al hacer click */}
+          <a
+            href="#catalogo-seccion"
+            className="absolute left-1/2 bottom-8 -translate-x-1/2 bg-white hover:bg-neutral-100 text-black font-bold uppercase tracking-widest text-xs px-8 py-3 transition-transform hover:scale-105 active:scale-95 shadow-2xl hidden sm:inline-block"
+          >
+            compra aquí
+          </a>
         </section>
 
-        {/* Círculos de Categorías / Marcas Estilo Stories de Instagram / Cyzone */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="text-xs font-black uppercase tracking-wider text-slate-400">
-              Marcas & Líneas Destacadas
-            </h2>
-            <span className="text-[11px] font-bold text-rose-600">
+        {/* Filtros de Marcas con diseño editorial y limpio */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-3">
+          <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-widest text-neutral-900">
+                Seleccionar Marca
+              </span>
+              {categoriaSeleccionada !== 'todas' && (
+                <span className="text-[11px] bg-black text-white px-2 py-0.5 uppercase tracking-wider font-semibold">
+                  Categoría: {categoriaSeleccionada}
+                </span>
+              )}
+            </div>
+            <span className="text-xs text-neutral-500 font-medium">
               {productosFiltrados.length} productos
             </span>
           </div>
 
-          <div className="flex items-center gap-2.5 overflow-x-auto pb-2 scrollbar-none -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
             <button
               onClick={() => setMarcaSeleccionada('todas')}
-              className={`px-5 py-2.5 rounded-full text-xs font-black shrink-0 transition-all ${
+              className={`px-4 py-2 text-xs font-bold uppercase tracking-wider shrink-0 transition-all border ${
                 marcaSeleccionada === 'todas'
-                  ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white shadow-md shadow-rose-600/25'
-                  : 'bg-white border border-slate-200/90 text-slate-700 hover:bg-rose-50/50'
+                  ? 'bg-black text-white border-black'
+                  : 'bg-white border-neutral-300 text-neutral-800 hover:border-black'
               }`}
             >
-              💖 Todo el Catálogo
+              Todas las Marcas
             </button>
             {marcas.map((m) => (
               <button
                 key={m.id}
                 onClick={() => setMarcaSeleccionada(m.slug)}
-                className={`px-5 py-2.5 rounded-full text-xs font-bold shrink-0 transition-all flex items-center gap-1.5 ${
+                className={`px-4 py-2 text-xs font-bold uppercase tracking-wider shrink-0 transition-all border ${
                   marcaSeleccionada === m.slug
-                    ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white shadow-md shadow-rose-600/25'
-                    : 'bg-white border border-slate-200/90 text-slate-700 hover:bg-rose-50/50'
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white border-neutral-300 text-neutral-800 hover:border-black'
                 }`}
               >
-                <span>{m.nombre}</span>
-                {m.categoria_principal === 'ELECTRO' && (
-                  <span className="text-[9px] bg-slate-100 text-slate-700 px-1.5 py-0.2 rounded-md font-bold">
-                    Hogar
-                  </span>
-                )}
+                {m.nombre}
               </button>
             ))}
           </div>
         </section>
 
-        {/* Sección de Catálogo */}
-        <section id="catalogo-seccion" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-rose-600" />
-              <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
-                {marcaSeleccionada === 'todas'
-                  ? 'Colección & Ofertas de Temporada'
-                  : `Productos de ${marcas.find((m) => m.slug === marcaSeleccionada)?.nombre ?? 'la marca'}`}
-              </h2>
-            </div>
-          </div>
-
+        {/* Grilla de Productos */}
+        <section id="catalogo-seccion" className="max-w-7xl mx-auto px-4 sm:px-6">
           {cargando ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-                <div key={n} className="bg-white rounded-3xl h-80 animate-pulse border border-slate-100" />
+                <div key={n} className="bg-neutral-100 aspect-square animate-pulse border border-neutral-200" />
               ))}
             </div>
           ) : productosFiltrados.length === 0 ? (
-            <div className="bg-white rounded-3xl p-12 text-center border border-rose-100 space-y-3">
-              <Tag className="w-12 h-12 text-rose-300 mx-auto" />
-              <h3 className="text-base font-bold text-slate-800">No encontramos productos</h3>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                No hay resultados para tu búsqueda o filtro seleccionado. Intenta con otra marca o término.
+            <div className="bg-neutral-50 border border-neutral-200 p-16 text-center space-y-2">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-900">
+                No se encontraron productos
+              </h3>
+              <p className="text-xs text-neutral-500">
+                Intenta seleccionando otra marca o limpiando los filtros de búsqueda.
               </p>
+              <button
+                onClick={() => {
+                  setMarcaSeleccionada('todas');
+                  setCategoriaSeleccionada('todas');
+                  setBusqueda('');
+                }}
+                className="mt-3 inline-block bg-black text-white text-xs font-bold uppercase tracking-wider px-4 py-2 hover:bg-neutral-800"
+              >
+                Ver todos los productos
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
@@ -205,18 +210,24 @@ function CatalogoPrincipal() {
       {/* Sticky Bottom Bar en Móvil */}
       <StickyBottomBar onAbrirCarrito={() => setCarritoAbierto(true)} />
 
-      {/* Footer Estilo Belcorp */}
-      <footer className="bg-white border-t border-rose-100/80 py-10 text-center text-xs text-slate-500 mt-16">
-        <div className="max-w-7xl mx-auto px-4 space-y-3">
-          <div className="flex items-center justify-center gap-2 font-black text-slate-900 text-sm">
-            <Sparkles className="w-4 h-4 text-rose-600" />
-            <span>Cyzone • Ésika • Unique Yanbal • Natura • Electro Hogar</span>
+      {/* Footer Minimalista Elegante */}
+      <footer className="bg-neutral-900 text-white py-12 mt-20 border-t border-neutral-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-neutral-800 pb-6">
+            <div className="text-center sm:text-left">
+              <span className="text-lg font-black tracking-widest uppercase block">
+                Catálogo Digital
+              </span>
+              <span className="text-xs text-neutral-400 font-light">
+                Cyzone • Ésika • L&apos;Bel • Unique • Natura
+              </span>
+            </div>
+            <div className="text-xs text-neutral-400 text-center sm:text-right">
+              Pedidos y entregas coordinados directamente por WhatsApp
+            </div>
           </div>
-          <p className="text-[11px] text-slate-400 max-w-md mx-auto leading-relaxed">
-            Catálogo digital de productos y promociones oficiales. Las marcas y nombres comerciales pertenecen a sus respectivos fabricantes.
-          </p>
-          <div className="pt-2 text-[10px] text-slate-400">
-            © 2026 Todos los derechos reservados • Pedidos directos y seguros por WhatsApp
+          <div className="text-[11px] text-neutral-500 text-center">
+            © 2026 Catálogo de Cosméticos & Belleza. Todos los derechos reservados.
           </div>
         </div>
       </footer>

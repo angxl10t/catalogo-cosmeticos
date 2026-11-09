@@ -1,74 +1,114 @@
 'use client';
 
+import { useState } from 'react';
 import { useCarrito } from '@/context/CarritoContext';
-import { ShoppingBag, Search, Sparkles, Heart } from 'lucide-react';
+import { ShoppingBag, Search, Menu, User, X } from 'lucide-react';
 import Link from 'next/link';
 
 interface NavbarProps {
   onAbrirCarrito: () => void;
   busqueda: string;
   onCambioBusqueda: (val: string) => void;
+  onFiltrarCategoria?: (cat: string) => void;
+  categoriaActiva?: string;
 }
 
-export function Navbar({ onAbrirCarrito, busqueda, onCambioBusqueda }: NavbarProps) {
+export function Navbar({ 
+  onAbrirCarrito, 
+  busqueda, 
+  onCambioBusqueda,
+  onFiltrarCategoria,
+  categoriaActiva = 'todas'
+}: NavbarProps) {
   const { totalItems } = useCarrito();
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  const [mostrarBuscador, setMostrarBuscador] = useState(false);
+
+  const categoriasMenu = [
+    { label: 'Maquillaje', slug: 'maquillaje' },
+    { label: 'Perfumes', slug: 'fragancias' },
+    { label: 'Skincare', slug: 'cuidado-facial' },
+    { label: 'Hogar & Electro', slug: 'electro-hogar' },
+  ];
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-rose-100/70 shadow-2xs">
-      {/* Barra superior de anuncios estilo Cyzone Belcorp */}
-      <div className="bg-gradient-to-r from-rose-600 via-pink-600 to-purple-600 text-white text-[11px] font-bold py-1.5 px-4 text-center tracking-wide flex items-center justify-center gap-2">
-        <Sparkles className="w-3.5 h-3.5 animate-pulse text-amber-300" />
-        <span>¡CYBER LOOK & CATÁLOGO 2026! Hasta -40% OFF en Maquillaje y Fragancias • Pedidos por WhatsApp</span>
-      </div>
-
+    <header className="sticky top-0 z-50 bg-white border-b border-neutral-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-        {/* Brand Logo al estilo Cyzone / Belcorp */}
-        <Link href="/" className="flex items-center gap-2 shrink-0 group">
-          <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-rose-600 to-pink-500 flex items-center justify-center text-white shadow-md shadow-rose-500/30 group-hover:scale-105 transition-transform">
-            <Sparkles className="w-5 h-5" />
-          </div>
-          <div>
-            <span className="font-black text-xl tracking-tight text-slate-900 block leading-none">
-              cy<span className="text-rose-600">zone</span><span className="text-slate-400 font-light text-base"> & beauty</span>
-            </span>
-            <span className="text-[9px] font-bold tracking-widest uppercase text-slate-400 block mt-0.5">
-              Belcorp • Unique • Natura
-            </span>
-          </div>
-        </Link>
+        {/* Izquierda: Menú Hamburguesa & Categorías Topbar */}
+        <div className="flex items-center gap-6">
+          <button
+            onClick={() => setMenuAbierto(!menuAbierto)}
+            className="p-1.5 text-black hover:opacity-70 transition-opacity"
+            aria-label="Abrir menú"
+          >
+            {menuAbierto ? <X className="w-6 h-6 stroke-[2.2]" /> : <Menu className="w-6 h-6 stroke-[2.2]" />}
+          </button>
 
-        {/* Buscador central amplio estilo e-commerce */}
-        <div className="flex-1 max-w-lg hidden sm:block">
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              value={busqueda}
-              onChange={(e) => onCambioBusqueda(e.target.value)}
-              placeholder="Buscar labial Studio Look, Sweet Black, perfume Ccori..."
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-100/80 focus:bg-white rounded-full text-xs font-medium outline-none border border-transparent focus:border-rose-400 focus:ring-2 focus:ring-rose-500/15 transition-all text-slate-800 placeholder:text-slate-400 shadow-inner"
-            />
-          </div>
+          {/* Enlaces de Categorías con divisor vertical idéntico a Cyzone */}
+          <nav className="hidden lg:flex items-center text-xs font-semibold tracking-wide text-neutral-800">
+            {categoriasMenu.map((cat, idx) => (
+              <div key={cat.slug} className="flex items-center">
+                <button
+                  onClick={() => onFiltrarCategoria && onFiltrarCategoria(cat.slug)}
+                  className={`px-3 py-1.5 hover:text-black transition-colors ${
+                    categoriaActiva === cat.slug ? 'font-black text-black underline underline-offset-8' : ''
+                  }`}
+                >
+                  {cat.label}
+                </button>
+                {idx < categoriasMenu.length - 1 && (
+                  <span className="text-neutral-300 font-light select-none">|</span>
+                )}
+              </div>
+            ))}
+          </nav>
         </div>
 
-        {/* Acciones Derecha */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* Centro: Logos de Marcas Belcorp (L'BEL | ESIKA | CYZONE) */}
+        <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <span className="font-serif tracking-widest text-neutral-400 text-sm font-semibold hidden md:inline">
+              L&apos;BEL
+            </span>
+            <span className="text-neutral-300 hidden md:inline font-light">|</span>
+            <span className="font-sans tracking-wider text-neutral-400 text-xs font-bold uppercase hidden sm:inline">
+              ÉSIKA
+            </span>
+            <span className="text-neutral-300 hidden sm:inline font-light">|</span>
+            <div className="bg-[#780050] text-white px-2.5 py-1 text-sm font-black tracking-tight rounded-xs shadow-xs">
+              cyzone<span className="text-[10px] align-super">[]</span>
+            </div>
+          </Link>
+        </div>
+
+        {/* Derecha: Buscador, Admin, Carrito */}
+        <div className="flex items-center gap-4 text-xs font-medium text-neutral-800">
           <Link
             href="/admin"
-            className="hidden md:flex items-center gap-1.5 text-[11px] font-bold text-slate-500 hover:text-rose-600 px-3 py-2 rounded-full hover:bg-rose-50 transition-colors"
+            className="hidden sm:inline-flex items-center gap-1.5 hover:text-black transition-colors font-medium text-[11px]"
           >
-            <span>Panel Admin</span>
+            <User className="w-4 h-4 stroke-[1.8]" />
+            <span>Admin</span>
           </Link>
 
-          {/* Botón Carrito con badge */}
+          {/* Icono de Búsqueda toggle */}
+          <button
+            onClick={() => setMostrarBuscador(!mostrarBuscador)}
+            className="p-1 hover:text-black transition-colors"
+            aria-label="Buscar"
+          >
+            <Search className="w-5 h-5 stroke-[2]" />
+          </button>
+
+          {/* Carrito de Compra con badge negro/rojo elegante */}
           <button
             onClick={onAbrirCarrito}
-            className="relative flex items-center gap-2 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white px-4 py-2.5 rounded-full text-xs font-bold shadow-md shadow-rose-600/25 transition-all active:scale-95"
+            className="relative flex items-center p-1 hover:opacity-80 transition-opacity"
+            aria-label="Abrir carrito"
           >
-            <ShoppingBag className="w-4 h-4" />
-            <span className="hidden sm:inline">Mi Pedido</span>
+            <ShoppingBag className="w-5 h-5 stroke-[2] text-black" />
             {totalItems > 0 && (
-              <span className="bg-white text-rose-600 text-[10px] font-black px-1.5 py-0.2 rounded-full min-w-4 text-center shadow-xs">
+              <span className="absolute -top-1 -right-2 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                 {totalItems}
               </span>
             )}
@@ -76,19 +116,54 @@ export function Navbar({ onAbrirCarrito, busqueda, onCambioBusqueda }: NavbarPro
         </div>
       </div>
 
-      {/* Buscador Mobile */}
-      <div className="p-2.5 border-t border-rose-100/60 sm:hidden px-4 bg-slate-50/50">
-        <div className="relative">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={busqueda}
-            onChange={(e) => onCambioBusqueda(e.target.value)}
-            placeholder="Buscar por producto, marca o tono..."
-            className="w-full pl-10 pr-4 py-2 bg-white rounded-full text-xs font-medium outline-none text-slate-800 border border-slate-200/80 shadow-2xs"
-          />
+      {/* Barra de Búsqueda Desplegable */}
+      {mostrarBuscador && (
+        <div className="border-t border-neutral-100 bg-neutral-50 px-4 py-3">
+          <div className="max-w-2xl mx-auto relative">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+            <input
+              type="text"
+              autoFocus
+              value={busqueda}
+              onChange={(e) => onCambioBusqueda(e.target.value)}
+              placeholder="Buscar por producto, marca o fragancia..."
+              className="w-full pl-10 pr-10 py-2 text-xs bg-white border border-neutral-300 rounded-md outline-none focus:border-black transition-all"
+            />
+            {busqueda && (
+              <button
+                onClick={() => onCambioBusqueda('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-black text-xs font-bold"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Menú Desplegable Lateral/Móvil */}
+      {menuAbierto && (
+        <div className="lg:hidden border-t border-neutral-200 bg-white px-4 py-3 space-y-2">
+          {categoriasMenu.map((cat) => (
+            <button
+              key={cat.slug}
+              onClick={() => {
+                onFiltrarCategoria && onFiltrarCategoria(cat.slug);
+                setMenuAbierto(false);
+              }}
+              className="block w-full text-left py-2 text-xs font-semibold tracking-wide text-neutral-800 hover:text-black border-b border-neutral-100"
+            >
+              {cat.label}
+            </button>
+          ))}
+          <Link
+            href="/admin"
+            className="block w-full text-left py-2 text-xs font-bold text-neutral-900"
+          >
+            Ingresar a Panel de Administración
+          </Link>
+        </div>
+      )}
     </header>
   );
 }
