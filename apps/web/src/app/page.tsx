@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getProductos, getMarcas, isSupabaseConfigured } from '@/lib/supabase';
 import { Producto, Marca } from '@/types/catalogo';
 import { Navbar } from '@/components/Navbar';
@@ -9,8 +9,10 @@ import { CarritoDrawer } from '@/components/CarritoDrawer';
 import { StickyBottomBar } from '@/components/StickyBottomBar';
 import { DetalleProductoModal } from '@/components/DetalleProductoModal';
 import { CarritoProvider } from '@/context/CarritoContext';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
+
+const PASO_PAGINACION = 40;
 
 export default function HomePage() {
   return (
@@ -29,6 +31,7 @@ function CatalogoPrincipal() {
   const [carritoAbierto, setCarritoAbierto] = useState<boolean>(false);
   const [cargando, setCargando] = useState<boolean>(true);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
+  const [limiteVisible, setLimiteVisible] = useState<number>(PASO_PAGINACION);
 
   useEffect(() => {
     async function cargarDatos() {
@@ -44,23 +47,34 @@ function CatalogoPrincipal() {
     cargarDatos();
   }, []);
 
+  // Reiniciar paginación cuando cambia cualquier filtro
+  useEffect(() => {
+    setLimiteVisible(PASO_PAGINACION);
+  }, [marcaSeleccionada, categoriaSeleccionada, busqueda]);
+
   // Filtro compuesto: marca + categoría del topbar + búsqueda
-  const productosFiltrados = productos.filter((p) => {
-    const coincideMarca =
-      marcaSeleccionada === 'todas' ||
-      p.marca?.slug === marcaSeleccionada ||
-      p.marca_id === marcaSeleccionada;
+  const productosFiltrados = useMemo(() => {
+    return productos.filter((p) => {
+      const coincideMarca =
+        marcaSeleccionada === 'todas' ||
+        p.marca?.slug === marcaSeleccionada ||
+        p.marca_id === marcaSeleccionada;
 
-    const coincideCategoria =
-      categoriaSeleccionada === 'todas' ||
-      p.categoria?.slug === categoriaSeleccionada ||
-      p.categoria_id === categoriaSeleccionada;
+      const coincideCategoria =
+        categoriaSeleccionada === 'todas' ||
+        p.categoria?.slug === categoriaSeleccionada ||
+        p.categoria_id === categoriaSeleccionada;
 
-    const texto = `${p.nombre} ${p.descripcion ?? ''} ${p.marca?.nombre ?? ''}`.toLowerCase();
-    const coincideBusqueda = texto.includes(busqueda.toLowerCase());
+      const texto = `${p.nombre} ${p.descripcion ?? ''} ${p.marca?.nombre ?? ''} ${p.codigo_referencia ?? ''}`.toLowerCase();
+      const coincideBusqueda = texto.includes(busqueda.toLowerCase());
 
-    return coincideMarca && coincideCategoria && coincideBusqueda;
-  });
+      return coincideMarca && coincideCategoria && coincideBusqueda;
+    });
+  }, [productos, marcaSeleccionada, categoriaSeleccionada, busqueda]);
+
+  const productosVisibles = useMemo(() => {
+    return productosFiltrados.slice(0, limiteVisible);
+  }, [productosFiltrados, limiteVisible]);
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans text-neutral-900 pb-20 sm:pb-0">
@@ -114,7 +128,7 @@ function CatalogoPrincipal() {
         {/* Filtros de Marcas con diseño editorial y limpio */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-3">
           <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-bold uppercase tracking-widest text-neutral-900">
                 Seleccionar Marca
               </span>
@@ -125,7 +139,7 @@ function CatalogoPrincipal() {
               )}
             </div>
             <span className="text-xs text-neutral-500 font-medium">
-              {productosFiltrados.length} productos
+              {productosFiltrados.length} productos disponibles
             </span>
           </div>
 
@@ -138,7 +152,7 @@ function CatalogoPrincipal() {
                   : 'bg-white border-neutral-300 text-neutral-800 hover:border-black'
               }`}
             >
-              Todas las Marcas
+              Todas las Marcas ({productos.length})
             </button>
             {marcas.map((m) => (
               <button
@@ -157,7 +171,7 @@ function CatalogoPrincipal() {
         </section>
 
         {/* Grilla de Productos */}
-        <section id="catalogo-seccion" className="max-w-7xl mx-auto px-4 sm:px-6">
+        <section id="catalogo-seccion" className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8">
           {cargando ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
@@ -184,15 +198,33 @@ function CatalogoPrincipal() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
-              {productosFiltrados.map((prod) => (
-                <ProductoCard
-                  key={prod.id}
-                  producto={prod}
-                  onVerDetalle={(p) => setProductoSeleccionado(p)}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+                {productosVisibles.map((prod) => (
+                  <ProductoCard
+                    key={prod.id}
+                    producto={prod}
+                    onVerDetalle={(p) => setProductoSeleccionado(p)}
+                  />
+                ))}
+              </div>
+
+              {/* Botón Cargar Más Productos si hay más disponibles */}
+              {limiteVisible < productosFiltrados.length && (
+                <div className="flex flex-col items-center justify-center pt-6 pb-4 space-y-2">
+                  <button
+                    onClick={() => setLimiteVisible((prev) => prev + PASO_PAGINACION)}
+                    className="flex items-center gap-2 bg-black hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest px-8 py-3.5 transition-all shadow-md active:scale-98"
+                  >
+                    <span>Cargar más productos</span>
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                  <span className="text-[11px] text-neutral-500 font-medium">
+                    Mostrando {productosVisibles.length} de {productosFiltrados.length} productos
+                  </span>
+                </div>
+              )}
+            </>
           )}
         </section>
       </main>

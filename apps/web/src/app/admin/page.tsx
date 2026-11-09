@@ -41,7 +41,8 @@ export default function AdminDashboardPage() {
         supabase
           .from('productos')
           .select('*, marca:marcas(*), categoria:categorias(*), variantes:producto_variantes(*)')
-          .order('created_at', { ascending: false }),
+          .order('created_at', { ascending: false })
+          .limit(1000),
         supabase.from('marcas').select('*').order('nombre'),
         supabase.from('categorias').select('*').order('nombre'),
         supabase.from('configuracion_tienda').select('*').single(),

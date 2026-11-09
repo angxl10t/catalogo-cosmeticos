@@ -17,6 +17,21 @@ export const supabase = isSupabaseConfigured
 
 // Funciones para obtener productos con fallback transparente a mockData
 export async function getProductos(): Promise<Producto[]> {
+  // 1. En el navegador, preferimos el API route interno que tiene acceso de lectura completo
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/productos');
+      if (res.ok) {
+        const json = await res.json();
+        if (Array.isArray(json) && json.length > 0) {
+          return json as Producto[];
+        }
+      }
+    } catch {
+      // Fallback a conexión directa si la API interna falla
+    }
+  }
+
   if (!isSupabaseConfigured || !supabase) {
     return PRODUCTOS_MOCK;
   }
@@ -26,7 +41,8 @@ export async function getProductos(): Promise<Producto[]> {
       .from('productos')
       .select('*, marca:marcas(*), categoria:categorias(*), variantes:producto_variantes(*)')
       .eq('activo', true)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(1000);
 
     if (error || !data || data.length === 0) {
       console.warn('Supabase sin datos o con error, usando mockData:', error?.message);
@@ -49,14 +65,15 @@ export async function getMarcas(): Promise<Marca[]> {
     const { data, error } = await supabase
       .from('marcas')
       .select('*')
-      .eq('activo', true);
+      .eq('activo', true)
+      .order('nombre', { ascending: true });
 
     if (error || !data || data.length === 0) {
       return MARCAS_MOCK;
     }
 
     return data as Marca[];
-  } catch (err) {
+  } catch {
     return MARCAS_MOCK;
   }
 }

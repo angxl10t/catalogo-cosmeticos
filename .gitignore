@@ -35,3 +35,7 @@ yarn-error.log*
 # OS Files
 .DS_Store
 Thumbs.db
+
+# Seed scripts with local credentials
+supabase/scripts/
+
