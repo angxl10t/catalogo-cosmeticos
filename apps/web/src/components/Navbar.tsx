@@ -34,11 +34,12 @@ export function Navbar({
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-neutral-200">
       {/* Top Strip Announcement LuKa */}
-      <div className="bg-black text-white text-[10px] tracking-widest uppercase font-semibold py-1.5 px-4 text-center">
-        <span>LuKa • Catálogo Oficial de Belleza & Cuidado Personal • Pedidos y Precios por WhatsApp</span>
+      <div className="bg-black text-white text-[9px] sm:text-[10px] tracking-widest uppercase font-semibold py-1.5 px-3 sm:px-4 text-center">
+        <span className="hidden sm:inline">LuKa • Catálogo Oficial de Belleza & Cuidado Personal • Pedidos y Precios por WhatsApp</span>
+        <span className="sm:hidden inline">LuKa • Catálogo Oficial • Precios y Pedidos por WhatsApp</span>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-3">
         {/* Izquierda: Menú Hamburguesa & Logo LuKa */}
         <div className="flex items-center gap-4 sm:gap-6">
           <button

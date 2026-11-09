@@ -169,10 +169,10 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 sm:p-5 bg-neutral-50 border-t border-neutral-200 flex items-center gap-3">
+        <div className="p-3.5 sm:p-5 bg-neutral-50 border-t border-neutral-200 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
           <button
             onClick={handleAgregar}
-            className={`flex-1 flex items-center justify-center gap-2 font-bold py-3 px-4 text-xs tracking-wider uppercase border transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 font-bold py-3 px-4 text-xs tracking-wider uppercase border transition-all cursor-pointer ${
               agregadoAnim
                 ? 'bg-neutral-800 text-white border-neutral-800'
                 : 'bg-white border-black text-black hover:bg-neutral-100'
@@ -196,7 +196,7 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
               onCerrar();
               consultarProductoDirecto(producto, varianteSeleccionada);
             }}
-            className="flex-1 flex items-center justify-center gap-2 bg-black hover:bg-neutral-800 text-white font-bold py-3 px-5 text-xs tracking-wider uppercase transition-all"
+            className="flex-1 flex items-center justify-center gap-2 bg-black hover:bg-neutral-800 text-white font-bold py-3.5 px-5 text-xs tracking-wider uppercase transition-all shadow-md cursor-pointer"
           >
             <MessageCircle className="w-4 h-4" />
             <span>Consultar por WhatsApp</span>

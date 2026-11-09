@@ -56,39 +56,39 @@ export function ProductoCard({ producto, onVerDetalle }: Props) {
       </div>
 
       {/* Contenido */}
-      <div className="p-3.5 flex-1 flex flex-col justify-between space-y-3 bg-white">
+      <div className="p-2.5 sm:p-3.5 flex-1 flex flex-col justify-between space-y-2.5 sm:space-y-3 bg-white">
         <div>
           {/* Marca & Referencia */}
-          <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-0.5">
-            <span>{producto.marca?.nombre ?? 'LUKA'}</span>
+          <div className="flex items-center justify-between text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-0.5">
+            <span className="truncate max-w-[90px] sm:max-w-none">{producto.marca?.nombre ?? 'LUKA'}</span>
             {producto.codigo_referencia && (
-              <span className="font-mono text-neutral-300 font-normal">
+              <span className="font-mono text-neutral-400 font-normal text-[9px]">
                 {producto.codigo_referencia}
               </span>
             )}
           </div>
 
           {/* Nombre */}
-          <h3 className="font-semibold text-neutral-900 text-xs sm:text-sm line-clamp-2 leading-snug group-hover:text-neutral-600 transition-colors">
+          <h3 className="font-semibold text-neutral-900 text-[11px] sm:text-xs md:text-sm line-clamp-2 leading-tight sm:leading-snug group-hover:text-neutral-600 transition-colors">
             {producto.nombre}
           </h3>
 
           {/* Swatches de Tonos si existen */}
           {producto.variantes && producto.variantes.length > 0 && (
-            <div className="mt-2" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between text-[10px] text-neutral-500 mb-1">
+            <div className="mt-1.5 sm:mt-2" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between text-[9px] sm:text-[10px] text-neutral-500 mb-1">
                 <span>Tono:</span>
-                <span className="font-semibold text-neutral-800 truncate max-w-[100px]">
+                <span className="font-semibold text-neutral-800 truncate max-w-[80px] sm:max-w-[110px]">
                   {varianteSeleccionada?.nombre}
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {producto.variantes.slice(0, 5).map((v) => (
+              <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
+                {producto.variantes.slice(0, 4).map((v) => (
                   <button
                     key={v.id}
                     onClick={() => setVarianteSeleccionada(v)}
                     title={v.nombre}
-                    className={`w-3.5 h-3.5 rounded-full border transition-all ${
+                    className={`w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border transition-all cursor-pointer ${
                       varianteSeleccionada?.id === v.id
                         ? 'ring-2 ring-black ring-offset-1 scale-110'
                         : 'border-black/20 hover:scale-105'
@@ -96,9 +96,9 @@ export function ProductoCard({ producto, onVerDetalle }: Props) {
                     style={{ backgroundColor: v.codigo_hex ?? '#171717' }}
                   />
                 ))}
-                {producto.variantes.length > 5 && (
+                {producto.variantes.length > 4 && (
                   <span className="text-[9px] text-neutral-400 font-bold">
-                    +{producto.variantes.length - 5}
+                    +{producto.variantes.length - 4}
                   </span>
                 )}
               </div>
@@ -107,22 +107,25 @@ export function ProductoCard({ producto, onVerDetalle }: Props) {
         </div>
 
         {/* Acciones: Consultar Precio y Agregar a Lista */}
-        <div className="pt-2.5 border-t border-neutral-100 flex items-center gap-2">
+        <div className="pt-2 sm:pt-2.5 border-t border-neutral-100 flex items-center gap-1.5 sm:gap-2">
           <button
             onClick={(e) => {
               e.stopPropagation();
               consultarProductoDirecto(producto, varianteSeleccionada);
             }}
-            className="flex-1 flex items-center justify-center gap-1.5 text-[11px] font-bold py-2 px-2.5 bg-black hover:bg-neutral-800 text-white transition-all uppercase tracking-wider"
+            className="flex-1 min-w-0 flex items-center justify-center gap-1 sm:gap-1.5 text-[10px] sm:text-[11px] font-bold py-2 sm:py-2.5 px-2 bg-black hover:bg-neutral-800 text-white transition-all uppercase tracking-wider min-h-[38px] sm:min-h-[40px] cursor-pointer"
           >
-            <MessageCircle className="w-3.5 h-3.5" />
-            <span>Consultar Precio</span>
+            <MessageCircle className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">
+              <span className="sm:inline hidden">Consultar Precio</span>
+              <span className="sm:hidden">Consultar</span>
+            </span>
           </button>
 
           <button
             onClick={handleAgregar}
             title="Agregar a mi lista para consultar varios"
-            className={`p-2 border transition-all shrink-0 ${
+            className={`p-2 sm:p-2.5 min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] flex items-center justify-center border transition-all shrink-0 cursor-pointer ${
               agregadoAnim
                 ? 'bg-neutral-800 text-white border-neutral-800'
                 : 'border-neutral-300 hover:border-black text-black bg-white'

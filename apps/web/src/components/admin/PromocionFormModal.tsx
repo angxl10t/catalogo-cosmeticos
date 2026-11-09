@@ -273,21 +273,21 @@ export function PromocionFormModal({
   if (!abierto) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-5 overflow-y-auto">
+      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[94vh] sm:max-h-[92vh]">
         {/* Header Modal */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
           <div>
             <span className="text-[10px] font-bold tracking-wider uppercase text-blue-600 block">
               LuKa Administración
             </span>
-            <h2 className="font-extrabold text-base sm:text-lg text-slate-900 leading-tight">
+            <h2 className="font-extrabold text-sm sm:text-lg text-slate-900 leading-tight">
               {promocionEditar ? 'Editar Promoción' : 'Nueva Promoción Comercial'}
             </h2>
           </div>
           <button
             onClick={onCerrar}
-            className="p-2 rounded-full hover:bg-slate-200 text-slate-400 transition-colors"
+            className="p-1.5 sm:p-2 rounded-full hover:bg-slate-200 text-slate-400 transition-colors"
             title="Cerrar"
           >
             <X className="w-5 h-5" />
@@ -295,7 +295,7 @@ export function PromocionFormModal({
         </div>
 
         {/* Formulario scrolleable */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1 text-xs text-slate-800">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1 text-xs text-slate-800">
           {errorMsg && (
             <div className="p-3 bg-red-50 text-red-700 border border-red-200 rounded-xl flex items-center gap-2 font-medium">
               <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
@@ -323,7 +323,7 @@ export function PromocionFormModal({
             <label className="font-bold text-slate-700 uppercase tracking-wider text-[11px]">
               Tipo de Promoción *
             </label>
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-2 sm:gap-2.5">
               {(Object.entries(TIPO_CONFIG) as [TipoPromocion, typeof TIPO_CONFIG[TipoPromocion]][]).map(
                 ([key, { label, desc, icon: Icon, color }]) => {
                   const seleccionada = tipo === key;

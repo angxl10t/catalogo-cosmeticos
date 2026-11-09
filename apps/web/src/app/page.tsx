@@ -254,15 +254,15 @@ function CatalogoPrincipal() {
         </section>
 
         {/* Grilla de Productos */}
-        <section id="catalogo-seccion" className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8">
+        <section id="catalogo-seccion" className="max-w-7xl mx-auto px-3 sm:px-6 space-y-6 sm:space-y-8">
           {cargando ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-4 md:gap-5">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
                 <div key={n} className="bg-neutral-100 aspect-square animate-pulse border border-neutral-200" />
               ))}
             </div>
           ) : productosFiltrados.length === 0 ? (
-            <div className="bg-neutral-50 border border-neutral-200 p-16 text-center space-y-3">
+            <div className="bg-neutral-50 border border-neutral-200 p-8 sm:p-16 text-center space-y-3">
               <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-900">
                 No se encontraron productos en LuKa
               </h3>
@@ -275,14 +275,14 @@ function CatalogoPrincipal() {
                   setCategoriaSeleccionada('todas');
                   setBusqueda('');
                 }}
-                className="mt-3 inline-block bg-black text-white text-xs font-bold uppercase tracking-widest px-6 py-2.5 hover:bg-neutral-800 transition-all"
+                className="mt-3 inline-block bg-black text-white text-xs font-bold uppercase tracking-widest px-6 py-2.5 hover:bg-neutral-800 transition-all cursor-pointer"
               >
                 Ver todo el catálogo LuKa
               </button>
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-4 md:gap-5">
                 {productosVisibles.map((prod) => (
                   <ProductoCard
                     key={prod.id}

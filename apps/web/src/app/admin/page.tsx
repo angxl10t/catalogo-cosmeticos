@@ -127,7 +127,7 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans text-slate-800">
       {/* Top Navbar */}
       <header className="bg-white sticky top-0 z-40 border-b border-slate-200 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-0 min-h-14 sm:h-16 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="font-bold text-base text-slate-900">Inventario & Productos</h1>
             <p className="text-xs text-slate-400">Gestiona precios, stock y variantes de tono en tiempo real.</p>
@@ -137,7 +137,7 @@ export default function AdminDashboardPage() {
               setProductoSeleccionado(null);
               setModalAbierto(true);
             }}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2 rounded-xl shadow-md transition-all active:scale-95"
+            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-md transition-all active:scale-95 shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Nuevo Producto</span>
@@ -146,9 +146,9 @@ export default function AdminDashboardPage() {
       </header>
 
       {/* Main Container */}
-      <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6 flex-1">
+      <main className="max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 flex-1">
         {/* Barra de Ajuste de WhatsApp & Métricas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
           <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
               <Package className="w-5 h-5" />

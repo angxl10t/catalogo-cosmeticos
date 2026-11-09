@@ -187,18 +187,18 @@ export default function MarcasPage() {
   const electro = marcas.filter((m) => m.categoria_principal === 'ELECTRO');
 
   return (
-    <div className="p-6 space-y-6 text-slate-800">
+    <div className="p-3 sm:p-6 md:p-8 space-y-4 sm:space-y-6 text-slate-800 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="font-bold text-xl text-slate-900">Marcas del Catálogo</h1>
+          <h1 className="font-bold text-lg sm:text-xl text-slate-900">Marcas del Catálogo</h1>
           <p className="text-xs text-slate-400 mt-0.5">
             Gestiona las marcas disponibles: Cyzone, Unique, Ésika, Natura y electrodomésticos.
           </p>
         </div>
         <button
           onClick={() => { setMarcaSeleccionada(null); setModalAbierto(true); }}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2 rounded-xl shadow-md transition-all"
+          className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-md transition-all shrink-0 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           Nueva Marca
@@ -206,18 +206,22 @@ export default function MarcasPage() {
       </div>
 
       {/* Contadores */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div className="bg-white rounded-2xl border border-slate-200/80 p-4 flex items-center gap-3 shadow-xs">
-          <span className="text-2xl">💄</span>
+          <div className="w-10 h-10 rounded-xl bg-pink-50 border border-pink-200 flex items-center justify-center text-pink-700 shrink-0 font-bold text-xs">
+            COS
+          </div>
           <div>
-            <span className="text-xs text-slate-400">Marcas de Cosméticos</span>
+            <span className="text-xs text-slate-400 font-medium">Marcas de Cosméticos</span>
             <p className="text-xl font-extrabold text-slate-900">{cosmeticos.length}</p>
           </div>
         </div>
         <div className="bg-white rounded-2xl border border-slate-200/80 p-4 flex items-center gap-3 shadow-xs">
-          <span className="text-2xl">🔌</span>
+          <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 shrink-0 font-bold text-xs">
+            ELEC
+          </div>
           <div>
-            <span className="text-xs text-slate-400">Marcas de Electro Hogar</span>
+            <span className="text-xs text-slate-400 font-medium">Marcas de Electro Hogar</span>
             <p className="text-xl font-extrabold text-slate-900">{electro.length}</p>
           </div>
         </div>
@@ -225,8 +229,8 @@ export default function MarcasPage() {
 
       {/* Tabla de Marcas */}
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
-        <div className="p-5 border-b border-slate-100">
-          <h2 className="font-bold text-slate-900">Todas las Marcas</h2>
+        <div className="p-4 sm:p-5 border-b border-slate-100">
+          <h2 className="font-bold text-slate-900 text-sm sm:text-base">Todas las Marcas</h2>
         </div>
 
         {cargando ? (
@@ -237,7 +241,8 @@ export default function MarcasPage() {
             <p className="text-sm font-bold text-slate-700">No hay marcas registradas</p>
           </div>
         ) : (
-          <table className="w-full text-left text-xs text-slate-600">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-600 min-w-[500px]">
             <thead className="bg-slate-50 border-b border-slate-100 text-slate-400 font-semibold uppercase text-[10px] tracking-wider">
               <tr>
                 <th className="py-3 px-5">Marca</th>
@@ -311,6 +316,7 @@ export default function MarcasPage() {
               ))}
             </tbody>
           </table>
+        </div>
         )}
       </div>
 

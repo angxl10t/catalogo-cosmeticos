@@ -138,7 +138,7 @@ export function HeroBannerCarousel({
 
   return (
     <section
-      className="relative w-full bg-black overflow-hidden aspect-16/7 sm:aspect-21/9 max-h-[560px] select-none"
+      className="relative w-full bg-black overflow-hidden min-h-[290px] sm:min-h-[360px] md:min-h-[420px] max-h-[560px] aspect-[4/3] sm:aspect-[21/9] select-none"
       onMouseEnter={() => setPausado(true)}
       onMouseLeave={() => setPausado(false)}
       aria-label="Carrusel de promociones y portada LuKa"
