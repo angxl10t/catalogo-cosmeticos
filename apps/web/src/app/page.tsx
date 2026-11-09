@@ -9,11 +9,25 @@ import { CarritoDrawer } from '@/components/CarritoDrawer';
 import { StickyBottomBar } from '@/components/StickyBottomBar';
 import { DetalleProductoModal } from '@/components/DetalleProductoModal';
 import { HeroBannerCarousel } from '@/components/HeroBannerCarousel';
-import { CarritoProvider } from '@/context/CarritoContext';
-import { AlertCircle, ChevronDown, MessageCircle, X, Sparkles, Tag } from 'lucide-react';
+import { CarritoProvider, useCarrito } from '@/context/CarritoContext';
+import { 
+  AlertCircle, 
+  ChevronDown, 
+  MessageCircle, 
+  X, 
+  Sparkles, 
+  Tag, 
+  ArrowUp, 
+  ArrowUpDown, 
+  Filter, 
+  RotateCcw, 
+  ShoppingBag, 
+  Check 
+} from 'lucide-react';
 import Image from 'next/image';
 
 const PASO_PAGINACION = 40;
+type Ordenamiento = 'destacados' | 'nombre-asc' | 'nombre-desc' | 'marca-asc';
 
 export default function HomePage() {
   return (
@@ -26,6 +40,7 @@ export default function HomePage() {
 }
 
 function CatalogoPrincipal() {
+  const { toast, cerrarToast } = useCarrito();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);
   const [promociones, setPromociones] = useState<Promocion[]>([]);
@@ -33,10 +48,12 @@ function CatalogoPrincipal() {
   const [marcaSeleccionada, setMarcaSeleccionada] = useState<string>('todas');
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string>('todas');
   const [busqueda, setBusqueda] = useState<string>('');
+  const [orden, setOrden] = useState<Ordenamiento>('destacados');
   const [carritoAbierto, setCarritoAbierto] = useState<boolean>(false);
   const [cargando, setCargando] = useState<boolean>(true);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
   const [limiteVisible, setLimiteVisible] = useState<number>(PASO_PAGINACION);
+  const [mostrarScrollTop, setMostrarScrollTop] = useState(false);
 
   useEffect(() => {
     async function cargarDatos() {
@@ -55,6 +72,19 @@ function CatalogoPrincipal() {
     }
     cargarDatos();
   }, []);
+
+  // Listener para botón de volver arriba
+  useEffect(() => {
+    const onScroll = () => {
+      setMostrarScrollTop(window.scrollY > 400);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Sincronizar URL para abrir producto si viene en query (?p=slug)
   useEffect(() => {
@@ -85,7 +115,7 @@ function CatalogoPrincipal() {
   // Reiniciar paginación cuando cambia cualquier filtro
   useEffect(() => {
     setLimiteVisible(PASO_PAGINACION);
-  }, [marcaSeleccionada, categoriaSeleccionada, busqueda, promocionActivaFiltro]);
+  }, [marcaSeleccionada, categoriaSeleccionada, busqueda, promocionActivaFiltro, orden]);
 
   // Conteo de productos por marca para mostrar en los botones
   const conteoPorMarca = useMemo(() => {
@@ -106,10 +136,9 @@ function CatalogoPrincipal() {
     return ids.length > 0 ? new Set(ids) : null;
   }, [promocionActivaFiltro]);
 
-  // Filtro compuesto: promoción + marca + categoría del topbar + búsqueda
+  // Filtro compuesto + ordenamiento
   const productosFiltrados = useMemo(() => {
-    return productos.filter((p) => {
-      // Si hay filtro de promoción activa
+    const filtrados = productos.filter((p) => {
       if (promoProductIdsSet && !promoProductIdsSet.has(p.id)) {
         return false;
       }
@@ -129,11 +158,65 @@ function CatalogoPrincipal() {
 
       return coincideMarca && coincideCategoria && coincideBusqueda;
     });
-  }, [productos, marcaSeleccionada, categoriaSeleccionada, busqueda, promoProductIdsSet]);
+
+    return filtrados.sort((a, b) => {
+      if (orden === 'nombre-asc') {
+        return a.nombre.localeCompare(b.nombre);
+      }
+      if (orden === 'nombre-desc') {
+        return b.nombre.localeCompare(a.nombre);
+      }
+      if (orden === 'marca-asc') {
+        const marcaA = a.marca?.nombre || '';
+        const marcaB = b.marca?.nombre || '';
+        return marcaA.localeCompare(marcaB);
+      }
+      // 'destacados': destacados y nuevos primero
+      const scoreA = (a.es_destacado ? 2 : 0) + (a.es_nuevo ? 1 : 0);
+      const scoreB = (b.es_destacado ? 2 : 0) + (b.es_nuevo ? 1 : 0);
+      if (scoreA !== scoreB) return scoreB - scoreA;
+      if (a.created_at && b.created_at) {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+      return 0;
+    });
+  }, [productos, marcaSeleccionada, categoriaSeleccionada, busqueda, promoProductIdsSet, orden]);
 
   const productosVisibles = useMemo(() => {
     return productosFiltrados.slice(0, limiteVisible);
   }, [productosFiltrados, limiteVisible]);
+
+  // Productos relacionados para el modal
+  const productosRelacionados = useMemo(() => {
+    if (!productoSeleccionado) return [];
+    return productos
+      .filter(
+        (p) =>
+          p.id !== productoSeleccionado.id &&
+          (p.marca_id === productoSeleccionado.marca_id ||
+            p.categoria_id === productoSeleccionado.categoria_id)
+      )
+      .slice(0, 3);
+  }, [productoSeleccionado, productos]);
+
+  const hayFiltrosActivos =
+    marcaSeleccionada !== 'todas' ||
+    categoriaSeleccionada !== 'todas' ||
+    promocionActivaFiltro !== null ||
+    busqueda.trim() !== '';
+
+  const limpiarTodosFiltros = () => {
+    setMarcaSeleccionada('todas');
+    setCategoriaSeleccionada('todas');
+    setPromocionActivaFiltro(null);
+    setBusqueda('');
+  };
+
+  const nombreMarcaActiva = useMemo(() => {
+    if (marcaSeleccionada === 'todas') return null;
+    const m = marcas.find((item) => item.slug === marcaSeleccionada || item.id === marcaSeleccionada);
+    return m ? m.nombre : marcaSeleccionada;
+  }, [marcaSeleccionada, marcas]);
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans text-neutral-900 pb-20 sm:pb-0">
@@ -145,6 +228,12 @@ function CatalogoPrincipal() {
         categoriaActiva={categoriaSeleccionada}
         onFiltrarCategoria={(cat) => {
           setCategoriaSeleccionada(cat === categoriaSeleccionada ? 'todas' : cat);
+          const el = document.getElementById('catalogo-seccion');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }}
+        marcaActiva={marcaSeleccionada}
+        onFiltrarMarca={(slug) => {
+          setMarcaSeleccionada(slug === marcaSeleccionada ? 'todas' : slug);
           const el = document.getElementById('catalogo-seccion');
           if (el) el.scrollIntoView({ behavior: 'smooth' });
         }}
@@ -181,8 +270,8 @@ function CatalogoPrincipal() {
         <div id="catalogo-seccion" className="scroll-mt-6" />
 
         {/* Filtros de Marcas con diseño editorial y limpio */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-neutral-200 pb-2.5">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-3 sm:space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-neutral-200 pb-3 gap-3">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-black uppercase tracking-widest text-neutral-900">
                 Catálogo LuKa
@@ -191,42 +280,105 @@ function CatalogoPrincipal() {
               <span className="text-xs text-neutral-500 font-semibold uppercase tracking-wider hidden sm:inline">
                 Filtrar por Marca
               </span>
+            </div>
+
+            {/* Controles de Orden y Conteo */}
+            <div className="flex items-center justify-between sm:justify-end gap-3 text-xs">
+              <div className="flex items-center gap-1.5 text-neutral-600">
+                <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400" />
+                <label htmlFor="ordenar-por" className="hidden sm:inline font-medium text-neutral-500">
+                  Ordenar:
+                </label>
+                <select
+                  id="ordenar-por"
+                  value={orden}
+                  onChange={(e) => setOrden(e.target.value as Ordenamiento)}
+                  className="bg-neutral-50 hover:bg-white border border-neutral-300 text-neutral-900 py-1 px-2 text-xs font-semibold focus:border-black outline-none cursor-pointer"
+                >
+                  <option value="destacados">Destacados & Nuevos</option>
+                  <option value="nombre-asc">Nombre (A - Z)</option>
+                  <option value="nombre-desc">Nombre (Z - A)</option>
+                  <option value="marca-asc">Marca (A - Z)</option>
+                </select>
+              </div>
+
+              <span className="text-xs text-neutral-500 font-semibold">
+                {productosFiltrados.length} de {productos.length} productos
+              </span>
+            </div>
+          </div>
+
+          {/* Barra de Filtros Activos Removibles */}
+          {hayFiltrosActivos && (
+            <div className="flex items-center gap-1.5 flex-wrap py-1 text-xs animate-in fade-in duration-150">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 mr-1 flex items-center gap-1">
+                <Filter className="w-3 h-3" />
+                Filtros activos:
+              </span>
+              {marcaSeleccionada !== 'todas' && (
+                <span className="inline-flex items-center gap-1 bg-black text-white px-2 py-0.5 text-[11px] font-semibold">
+                  <span>Marca: {nombreMarcaActiva}</span>
+                  <button
+                    onClick={() => setMarcaSeleccionada('todas')}
+                    className="hover:text-neutral-300 ml-0.5 cursor-pointer"
+                    title="Quitar filtro de marca"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
               {categoriaSeleccionada !== 'todas' && (
-                <div className="flex items-center gap-1.5 bg-black text-white px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider">
+                <span className="inline-flex items-center gap-1 bg-neutral-900 text-white px-2 py-0.5 text-[11px] font-semibold">
                   <span>Categoría: {categoriaSeleccionada}</span>
                   <button
                     onClick={() => setCategoriaSeleccionada('todas')}
-                    className="hover:text-neutral-300 ml-1 font-bold"
+                    className="hover:text-neutral-300 ml-0.5 cursor-pointer"
                     title="Quitar filtro de categoría"
                   >
-                    <X className="w-3 h-3 inline" />
+                    <X className="w-3 h-3" />
                   </button>
-                </div>
+                </span>
               )}
               {promocionActivaFiltro && (
-                <div className="flex items-center gap-1.5 bg-blue-600 text-white px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider shadow-xs">
-                  <Tag className="w-3 h-3 inline" />
+                <span className="inline-flex items-center gap-1 bg-blue-600 text-white px-2 py-0.5 text-[11px] font-semibold shadow-xs">
+                  <Tag className="w-3 h-3" />
                   <span>Promo: {promocionActivaFiltro.titulo}</span>
                   <button
                     onClick={() => setPromocionActivaFiltro(null)}
-                    className="hover:text-blue-200 ml-1 font-bold"
+                    className="hover:text-blue-200 ml-0.5 cursor-pointer"
                     title="Quitar filtro de promoción"
                   >
-                    <X className="w-3 h-3 inline" />
+                    <X className="w-3 h-3" />
                   </button>
-                </div>
+                </span>
               )}
+              {busqueda.trim() !== '' && (
+                <span className="inline-flex items-center gap-1 bg-neutral-100 border border-neutral-300 text-neutral-800 px-2 py-0.5 text-[11px] font-semibold">
+                  <span>Búsqueda: &ldquo;{busqueda}&rdquo;</span>
+                  <button
+                    onClick={() => setBusqueda('')}
+                    className="hover:text-black ml-0.5 cursor-pointer"
+                    title="Limpiar búsqueda"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+              <button
+                onClick={limpiarTodosFiltros}
+                className="text-[11px] font-bold text-neutral-500 hover:text-black underline ml-1 cursor-pointer flex items-center gap-1"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Limpiar filtros
+              </button>
             </div>
-            <span className="text-xs text-neutral-500 font-semibold">
-              {productosFiltrados.length} de {productos.length} productos
-            </span>
-          </div>
+          )}
 
           {/* Pills de marcas horizontales con contadores reales */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
             <button
               onClick={() => setMarcaSeleccionada('todas')}
-              className={`px-4 py-2 text-xs font-bold uppercase tracking-wider shrink-0 transition-all border ${
+              className={`px-4 py-2 text-xs font-bold uppercase tracking-wider shrink-0 transition-all border cursor-pointer ${
                 marcaSeleccionada === 'todas'
                   ? 'bg-black text-white border-black shadow-xs'
                   : 'bg-white border-neutral-300 text-neutral-800 hover:border-black'
@@ -240,7 +392,7 @@ function CatalogoPrincipal() {
                 <button
                   key={m.id}
                   onClick={() => setMarcaSeleccionada(m.slug)}
-                  className={`px-4 py-2 text-xs font-bold uppercase tracking-wider shrink-0 transition-all border ${
+                  className={`px-4 py-2 text-xs font-bold uppercase tracking-wider shrink-0 transition-all border cursor-pointer ${
                     marcaSeleccionada === m.slug
                       ? 'bg-black text-white border-black shadow-xs'
                       : 'bg-white border-neutral-300 text-neutral-800 hover:border-black'
@@ -258,27 +410,63 @@ function CatalogoPrincipal() {
           {cargando ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-4 md:gap-5">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-                <div key={n} className="bg-neutral-100 aspect-square animate-pulse border border-neutral-200" />
+                <div key={n} className="bg-white border border-neutral-200 overflow-hidden flex flex-col animate-pulse">
+                  <div className="aspect-square bg-neutral-100" />
+                  <div className="p-3 space-y-2 flex-1 flex flex-col justify-between">
+                    <div className="space-y-1.5">
+                      <div className="h-2.5 w-14 bg-neutral-200" />
+                      <div className="h-3.5 w-full bg-neutral-200" />
+                      <div className="h-3.5 w-3/4 bg-neutral-200" />
+                    </div>
+                    <div className="pt-2 border-t border-neutral-100 flex items-center gap-1.5">
+                      <div className="h-8 flex-1 bg-neutral-200" />
+                      <div className="h-8 w-8 bg-neutral-200 shrink-0" />
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           ) : productosFiltrados.length === 0 ? (
-            <div className="bg-neutral-50 border border-neutral-200 p-8 sm:p-16 text-center space-y-3">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-900">
-                No se encontraron productos en LuKa
-              </h3>
-              <p className="text-xs text-neutral-500 max-w-sm mx-auto">
-                No hay coincidencias para los filtros aplicados. Intenta seleccionando otra marca o limpiando la búsqueda.
-              </p>
-              <button
-                onClick={() => {
-                  setMarcaSeleccionada('todas');
-                  setCategoriaSeleccionada('todas');
-                  setBusqueda('');
-                }}
-                className="mt-3 inline-block bg-black text-white text-xs font-bold uppercase tracking-widest px-6 py-2.5 hover:bg-neutral-800 transition-all cursor-pointer"
-              >
-                Ver todo el catálogo LuKa
-              </button>
+            <div className="bg-neutral-50 border border-neutral-200 p-8 sm:p-14 text-center space-y-4 max-w-xl mx-auto my-6">
+              <div className="w-12 h-12 bg-neutral-200 rounded-full flex items-center justify-center mx-auto text-neutral-600">
+                <Filter className="w-6 h-6 stroke-[1.5]" />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="text-sm font-black uppercase tracking-wider text-neutral-900">
+                  No se encontraron productos en LuKa
+                </h3>
+                <p className="text-xs text-neutral-500 max-w-md mx-auto">
+                  No hay resultados para los filtros o el texto ingresado. Prueba con otra búsqueda o una de nuestras marcas oficiales.
+                </p>
+              </div>
+
+              {/* Sugerencias de búsqueda rápida */}
+              <div className="pt-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 block mb-2">
+                  Sugerencias populares
+                </span>
+                <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                  {['Labial', 'Perfume', 'Mascara', 'Cyzone', 'Ésika', 'Yanbal', 'Natura', 'L\'Bel'].map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => setBusqueda(tag)}
+                      className="px-2.5 py-1 text-xs font-semibold bg-white border border-neutral-200 hover:border-black text-neutral-800 transition-all cursor-pointer"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  onClick={limpiarTodosFiltros}
+                  className="inline-flex items-center gap-2 bg-black text-white text-xs font-bold uppercase tracking-widest px-6 py-3 hover:bg-neutral-800 transition-all cursor-pointer shadow-sm active:scale-95"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Ver todo el catálogo LuKa</span>
+                </button>
+              </div>
             </div>
           ) : (
             <>
@@ -297,7 +485,7 @@ function CatalogoPrincipal() {
                 <div className="flex flex-col items-center justify-center pt-6 pb-4 space-y-2">
                   <button
                     onClick={() => setLimiteVisible((prev) => prev + PASO_PAGINACION)}
-                    className="flex items-center gap-2 bg-black hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest px-8 py-3.5 transition-all shadow-md active:scale-98"
+                    className="flex items-center gap-2 bg-black hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-widest px-8 py-3.5 transition-all shadow-md active:scale-98 cursor-pointer"
                   >
                     <span>Cargar más productos</span>
                     <ChevronDown className="w-4 h-4" />
@@ -312,6 +500,19 @@ function CatalogoPrincipal() {
         </section>
       </main>
 
+      {/* Botón Volver Arriba Flotante */}
+      {mostrarScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-20 sm:bottom-6 left-4 sm:left-6 z-40 bg-white/95 hover:bg-neutral-100 text-black p-3 border border-neutral-300 shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider"
+          aria-label="Volver arriba"
+          title="Volver arriba"
+        >
+          <ArrowUp className="w-4 h-4" />
+          <span className="hidden sm:inline">Subir</span>
+        </button>
+      )}
+
       {/* Botón Flotante Permanente de WhatsApp LuKa */}
       <a
         href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '51997491793'}?text=${encodeURIComponent('Hola LuKa, deseo realizar una consulta sobre el catálogo de cosméticos y belleza.')}`}
@@ -324,11 +525,46 @@ function CatalogoPrincipal() {
         <span className="hidden sm:inline">WhatsApp LuKa</span>
       </a>
 
+      {/* Toast Notification Flotante */}
+      {toast && (
+        <div className="fixed top-20 right-4 sm:top-24 sm:right-6 z-50 bg-black text-white px-4 py-3 shadow-2xl border border-white/20 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="w-7 h-7 rounded-full bg-white text-black flex items-center justify-center shrink-0">
+            <Check className="w-4 h-4 stroke-[2.5]" />
+          </div>
+          <div className="text-xs max-w-xs">
+            <p className="font-bold uppercase tracking-wider">{toast.mensaje}</p>
+            {toast.productoNombre && (
+              <p className="text-[11px] text-neutral-300 truncate max-w-[180px] sm:max-w-xs">
+                {toast.productoNombre}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => {
+              cerrarToast();
+              setCarritoAbierto(true);
+            }}
+            className="text-xs font-bold uppercase underline tracking-wider hover:text-neutral-300 ml-1 shrink-0 cursor-pointer"
+          >
+            Ver Lista
+          </button>
+          <button
+            onClick={cerrarToast}
+            className="text-neutral-400 hover:text-white p-1 ml-1 cursor-pointer"
+            aria-label="Cerrar notificación"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Modal Detalle de Producto */}
       <DetalleProductoModal
         producto={productoSeleccionado}
         abierto={Boolean(productoSeleccionado)}
         onCerrar={cerrarModalProducto}
+        productosRelacionados={productosRelacionados}
+        onSeleccionarRelacionado={(p) => abrirModalProducto(p)}
       />
 
       {/* Drawer Carrito */}

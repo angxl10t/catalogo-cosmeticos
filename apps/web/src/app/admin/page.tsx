@@ -14,8 +14,13 @@ import {
   Search, 
   Phone, 
   Save,
-  ShoppingBag
+  ShoppingBag,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2
 } from 'lucide-react';
+
+const ELEMENTOS_POR_PAGINA = 25;
 
 export default function AdminDashboardPage() {
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -23,6 +28,9 @@ export default function AdminDashboardPage() {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [cargando, setCargando] = useState<boolean>(true);
   const [busqueda, setBusqueda] = useState<string>('');
+  const [marcaFiltro, setMarcaFiltro] = useState<string>('todas');
+  const [paginaActual, setPaginaActual] = useState<number>(1);
+  const [mensajeAlerta, setMensajeAlerta] = useState<string | null>(null);
 
   // Config WhatsApp
   const [whatsappPhone, setWhatsappPhone] = useState<string>('51997491793');
@@ -109,19 +117,34 @@ export default function AdminDashboardPage() {
         .from('configuracion_tienda')
         .update({ whatsapp_pedidos: whatsappPhone })
         .eq('id', 1);
-      alert('Número de WhatsApp actualizado con éxito.');
-    } catch (e) {
-      alert('Error actualizando teléfono');
+      setMensajeAlerta('Número de WhatsApp actualizado con éxito.');
+      setTimeout(() => setMensajeAlerta(null), 3000);
+    } catch {
+      setMensajeAlerta('Error actualizando teléfono en Supabase');
+      setTimeout(() => setMensajeAlerta(null), 3000);
     } finally {
       setGuardandoPhone(false);
     }
   };
 
-  const productosFiltrados = productos.filter((p) =>
-    `${p.nombre} ${p.codigo_referencia ?? ''} ${p.marca?.nombre ?? ''}`
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [busqueda, marcaFiltro]);
+
+  const productosFiltrados = productos.filter((p) => {
+    const coincideTexto = `${p.nombre} ${p.codigo_referencia ?? ''} ${p.marca?.nombre ?? ''}`
       .toLowerCase()
-      .includes(busqueda.toLowerCase())
-  );
+      .includes(busqueda.toLowerCase());
+    const coincideMarca =
+      marcaFiltro === 'todas' ||
+      p.marca?.slug === marcaFiltro ||
+      p.marca_id === marcaFiltro;
+    return coincideTexto && coincideMarca;
+  });
+
+  const totalPaginas = Math.ceil(productosFiltrados.length / ELEMENTOS_POR_PAGINA) || 1;
+  const inicioItem = (paginaActual - 1) * ELEMENTOS_POR_PAGINA;
+  const productosPaginados = productosFiltrados.slice(inicioItem, inicioItem + ELEMENTOS_POR_PAGINA);
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans text-slate-800">
@@ -211,15 +234,30 @@ export default function AdminDashboardPage() {
               </p>
             </div>
 
-            <div className="w-full sm:w-72 relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Buscar por nombre, código..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-slate-50 rounded-xl text-xs border border-slate-200 outline-none focus:border-blue-500"
-              />
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+              <select
+                value={marcaFiltro}
+                onChange={(e) => setMarcaFiltro(e.target.value)}
+                className="bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-blue-500 cursor-pointer"
+              >
+                <option value="todas">Todas las marcas ({productos.length})</option>
+                {marcas.map((m) => (
+                  <option key={m.id} value={m.slug}>
+                    {m.nombre}
+                  </option>
+                ))}
+              </select>
+
+              <div className="w-full sm:w-64 relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre, código..."
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-slate-50 rounded-xl text-xs border border-slate-200 outline-none focus:border-blue-500"
+                />
+              </div>
             </div>
           </div>
 
@@ -251,7 +289,7 @@ export default function AdminDashboardPage() {
                     </td>
                   </tr>
                 ) : (
-                  productosFiltrados.map((prod) => (
+                  productosPaginados.map((prod) => (
                     <tr key={prod.id} className="hover:bg-slate-50/70 transition-colors">
                       {/* Producto & Foto */}
                       <td className="py-3 px-4">
@@ -339,7 +377,7 @@ export default function AdminDashboardPage() {
                       <td className="py-3 px-4">
                         <button
                           onClick={() => handleToggleActivo(prod)}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                             prod.activo
                               ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                               : 'bg-slate-200 text-slate-500 hover:bg-slate-300'
@@ -358,14 +396,14 @@ export default function AdminDashboardPage() {
                               setProductoSeleccionado(prod);
                               setModalAbierto(true);
                             }}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
                             title="Editar"
                           >
                             <Edit3 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleEliminarProducto(prod.id)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                             title="Eliminar"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -378,8 +416,47 @@ export default function AdminDashboardPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Barra de Paginación */}
+          {productosFiltrados.length > 0 && (
+            <div className="p-4 border-t border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+              <span className="font-medium">
+                Mostrando {inicioItem + 1} a {Math.min(inicioItem + ELEMENTOS_POR_PAGINA, productosFiltrados.length)} de {productosFiltrados.length} productos
+              </span>
+
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-slate-700 mr-2">
+                  Página {paginaActual} de {totalPaginas}
+                </span>
+                <button
+                  onClick={() => setPaginaActual((prev) => Math.max(1, prev - 1))}
+                  disabled={paginaActual === 1}
+                  className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  title="Página anterior"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setPaginaActual((prev) => Math.min(totalPaginas, prev + 1))}
+                  disabled={paginaActual === totalPaginas}
+                  className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  title="Página siguiente"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
+
+      {/* Alerta flotante */}
+      {mensajeAlerta && (
+        <div className="fixed top-4 right-4 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2 text-xs font-semibold animate-in fade-in slide-in-from-top-2 duration-150">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{mensajeAlerta}</span>
+        </div>
+      )}
 
       {/* Modal de Creación / Edición */}
       {modalAbierto && (

@@ -45,6 +45,7 @@ export interface Producto {
   imagen_principal: string;
   galeria_imagenes: string[];
   variantes?: VarianteProducto[];
+  created_at?: string;
 }
 
 export interface ItemCarrito {

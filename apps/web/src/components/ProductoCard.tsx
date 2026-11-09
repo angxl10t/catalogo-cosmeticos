@@ -38,6 +38,9 @@ export function ProductoCard({ producto, onVerDetalle }: Props) {
           alt={producto.nombre}
           className="w-full h-full object-cover object-center group-hover:scale-103 transition-transform duration-300 ease-out"
           loading="lazy"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = '/hero-cyzone.jpg';
+          }}
         />
 
         {/* Badges de Estado */}

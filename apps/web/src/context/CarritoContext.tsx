@@ -3,6 +3,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ItemCarrito, Producto, VarianteProducto } from '@/types/catalogo';
 
+interface ToastInfo {
+  mensaje: string;
+  productoNombre?: string;
+}
+
 interface CarritoContextType {
   items: ItemCarrito[];
   agregarProducto: (producto: Producto, variante?: VarianteProducto) => void;
@@ -12,12 +17,15 @@ interface CarritoContextType {
   limpiarCarrito: () => void;
   consultarWhatsApp: (telefono?: string) => void;
   consultarProductoDirecto: (producto: Producto, variante?: VarianteProducto) => void;
+  toast: ToastInfo | null;
+  cerrarToast: () => void;
 }
 
 const CarritoContext = createContext<CarritoContextType | undefined>(undefined);
 
 export function CarritoProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<ItemCarrito[]>([]);
+  const [toast, setToast] = useState<ToastInfo | null>(null);
 
   useEffect(() => {
     const guardado = localStorage.getItem('catalogo_consulta_items');
@@ -34,6 +42,8 @@ export function CarritoProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('catalogo_consulta_items', JSON.stringify(items));
   }, [items]);
 
+  const cerrarToast = () => setToast(null);
+
   const agregarProducto = (producto: Producto, variante?: VarianteProducto) => {
     setItems((prev) => {
       const index = prev.findIndex(
@@ -48,6 +58,16 @@ export function CarritoProvider({ children }: { children: React.ReactNode }) {
 
       return [...prev, { producto, varianteSeleccionada: variante, cantidad: 1 }];
     });
+
+    const tonoTxt = variante ? ` (${variante.nombre})` : '';
+    setToast({
+      mensaje: 'Agregado a tu lista LuKa',
+      productoNombre: `${producto.nombre}${tonoTxt}`,
+    });
+
+    setTimeout(() => {
+      setToast((current) => (current?.productoNombre?.startsWith(producto.nombre) ? null : current));
+    }, 2800);
   };
 
   const eliminarItem = (productoId: string, varianteId?: string) => {
@@ -122,6 +142,8 @@ export function CarritoProvider({ children }: { children: React.ReactNode }) {
         limpiarCarrito,
         consultarWhatsApp,
         consultarProductoDirecto,
+        toast,
+        cerrarToast,
       }}
     >
       {children}
