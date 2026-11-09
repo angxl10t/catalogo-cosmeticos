@@ -78,38 +78,36 @@ export function CarritoProvider({ children }: { children: React.ReactNode }) {
 
   const totalItems = items.reduce((acc, it) => acc + it.cantidad, 0);
 
-  // Consulta consolidada por WhatsApp sin precios
+  // Consulta consolidada por WhatsApp: clara, sin numeración y solo con referencia y tono
   const consultarWhatsApp = (telefonoConfigurado?: string) => {
     const telefono = telefonoConfigurado || process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '51997491793';
 
     if (items.length === 0) return;
 
-    let mensaje = `Hola, he revisado el catalogo online y deseo consultar disponibilidad y precio de los siguientes productos:\n\n`;
+    let mensaje = `Hola, deseo consultar el precio y disponibilidad de los siguientes productos del catalogo:\n\n`;
 
-    items.forEach((it, idx) => {
-      const marcaStr = it.producto.marca ? `[${it.producto.marca.nombre}] ` : '';
-      const refStr = it.producto.codigo_referencia ? ` (Ref: ${it.producto.codigo_referencia})` : '';
-      const varianteStr = it.varianteSeleccionada ? ` - Tono/Opcion: ${it.varianteSeleccionada.nombre}` : '';
+    items.forEach((it) => {
+      const ref = it.producto.codigo_referencia ? `[Ref: ${it.producto.codigo_referencia}] ` : '';
+      const tono = it.varianteSeleccionada ? ` (Tono: ${it.varianteSeleccionada.nombre})` : '';
+      const cantidad = it.cantidad > 1 ? ` - Cantidad: ${it.cantidad}` : '';
 
-      mensaje += `${idx + 1}. ${marcaStr}${it.producto.nombre}${refStr}${varianteStr}\n`;
-      mensaje += `   Cantidad: ${it.cantidad} unidad(es)\n\n`;
+      mensaje += `• ${ref}${it.producto.nombre}${tono}${cantidad}\n`;
     });
 
-    mensaje += `Me podrian confirmar el precio actualizado y metodo de entrega? Muchas gracias.`;
+    mensaje += `\nQuedo a la espera de su respuesta para coordinar. Muchas gracias.`;
 
     const encoded = encodeURIComponent(mensaje);
     const url = `https://wa.me/${telefono}?text=${encoded}`;
     window.open(url, '_blank');
   };
 
-  // Consulta directa de un solo producto
+  // Consulta directa de un solo producto: limpia, directa con referencia y tono
   const consultarProductoDirecto = (producto: Producto, variante?: VarianteProducto) => {
     const telefono = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '51997491793';
-    const marcaStr = producto.marca ? `[${producto.marca.nombre}] ` : '';
-    const refStr = producto.codigo_referencia ? ` (Ref: ${producto.codigo_referencia})` : '';
-    const varianteStr = variante ? ` en tono/opcion ${variante.nombre}` : '';
+    const ref = producto.codigo_referencia ? `[Ref: ${producto.codigo_referencia}] ` : '';
+    const tono = variante ? ` en tono ${variante.nombre}` : '';
 
-    const mensaje = `Hola, deseo consultar el precio y disponibilidad del producto: ${marcaStr}${producto.nombre}${refStr}${varianteStr}. Quedo atento a su respuesta, gracias.`;
+    const mensaje = `Hola, deseo consultar el precio y disponibilidad de:\n• ${ref}${producto.nombre}${tono}\n\nQuedo atento a su respuesta, gracias.`;
     const encoded = encodeURIComponent(mensaje);
     const url = `https://wa.me/${telefono}?text=${encoded}`;
     window.open(url, '_blank');
