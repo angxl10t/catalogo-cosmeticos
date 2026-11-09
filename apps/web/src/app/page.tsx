@@ -2,14 +2,15 @@
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { getProductos, getMarcas, isSupabaseConfigured } from '@/lib/supabase';
-import { Producto, Marca } from '@/types/catalogo';
+import { Producto, Marca, Promocion } from '@/types/catalogo';
 import { Navbar } from '@/components/Navbar';
 import { ProductoCard } from '@/components/ProductoCard';
 import { CarritoDrawer } from '@/components/CarritoDrawer';
 import { StickyBottomBar } from '@/components/StickyBottomBar';
 import { DetalleProductoModal } from '@/components/DetalleProductoModal';
+import { HeroBannerCarousel } from '@/components/HeroBannerCarousel';
 import { CarritoProvider } from '@/context/CarritoContext';
-import { AlertCircle, ChevronDown, MessageCircle, X, Sparkles } from 'lucide-react';
+import { AlertCircle, ChevronDown, MessageCircle, X, Sparkles, Tag } from 'lucide-react';
 import Image from 'next/image';
 
 const PASO_PAGINACION = 40;
@@ -27,6 +28,8 @@ export default function HomePage() {
 function CatalogoPrincipal() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);
+  const [promociones, setPromociones] = useState<Promocion[]>([]);
+  const [promocionActivaFiltro, setPromocionActivaFiltro] = useState<Promocion | null>(null);
   const [marcaSeleccionada, setMarcaSeleccionada] = useState<string>('todas');
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string>('todas');
   const [busqueda, setBusqueda] = useState<string>('');
@@ -38,12 +41,16 @@ function CatalogoPrincipal() {
   useEffect(() => {
     async function cargarDatos() {
       setCargando(true);
-      const [prodsData, marcasData] = await Promise.all([
+      const [prodsData, marcasData, promosData] = await Promise.all([
         getProductos(),
         getMarcas(),
+        fetch('/api/promociones').then((r) => (r.ok ? r.json() : [])).catch(() => []),
       ]);
       setProductos(prodsData);
       setMarcas(marcasData);
+      if (Array.isArray(promosData)) {
+        setPromociones(promosData);
+      }
       setCargando(false);
     }
     cargarDatos();
@@ -78,7 +85,7 @@ function CatalogoPrincipal() {
   // Reiniciar paginación cuando cambia cualquier filtro
   useEffect(() => {
     setLimiteVisible(PASO_PAGINACION);
-  }, [marcaSeleccionada, categoriaSeleccionada, busqueda]);
+  }, [marcaSeleccionada, categoriaSeleccionada, busqueda, promocionActivaFiltro]);
 
   // Conteo de productos por marca para mostrar en los botones
   const conteoPorMarca = useMemo(() => {
@@ -90,9 +97,23 @@ function CatalogoPrincipal() {
     return map;
   }, [productos]);
 
-  // Filtro compuesto: marca + categoría del topbar + búsqueda
+  // Set de IDs de productos en la promoción seleccionada
+  const promoProductIdsSet = useMemo(() => {
+    if (!promocionActivaFiltro) return null;
+    const ids = (promocionActivaFiltro.productos || [])
+      .map((p) => (p as { producto?: { id: string }; producto_id?: string }).producto?.id || (p as { producto_id?: string }).producto_id)
+      .filter(Boolean) as string[];
+    return ids.length > 0 ? new Set(ids) : null;
+  }, [promocionActivaFiltro]);
+
+  // Filtro compuesto: promoción + marca + categoría del topbar + búsqueda
   const productosFiltrados = useMemo(() => {
     return productos.filter((p) => {
+      // Si hay filtro de promoción activa
+      if (promoProductIdsSet && !promoProductIdsSet.has(p.id)) {
+        return false;
+      }
+
       const coincideMarca =
         marcaSeleccionada === 'todas' ||
         p.marca?.slug === marcaSeleccionada ||
@@ -108,7 +129,7 @@ function CatalogoPrincipal() {
 
       return coincideMarca && coincideCategoria && coincideBusqueda;
     });
-  }, [productos, marcaSeleccionada, categoriaSeleccionada, busqueda]);
+  }, [productos, marcaSeleccionada, categoriaSeleccionada, busqueda, promoProductIdsSet]);
 
   const productosVisibles = useMemo(() => {
     return productosFiltrados.slice(0, limiteVisible);
@@ -144,33 +165,20 @@ function CatalogoPrincipal() {
           </div>
         )}
 
-        {/* Hero Banner Oficial Cyzone - "IN LOVE POTION ENCIENDE LA MAGIA" */}
-        <section className="relative w-full bg-black overflow-hidden aspect-16/7 sm:aspect-21/9 max-h-[560px]">
-          <Image
-            src="/hero-cyzone.jpg"
-            alt="Cyzone In Love Potion - Enciende la magia"
-            fill
-            priority
-            className="object-cover object-center"
-            sizes="100vw"
-          />
+        {/* Hero Banner Oficial con Carrusel automático de promociones */}
+        <HeroBannerCarousel
+          promociones={promociones}
+          onSeleccionarPromocion={(promo) => {
+            setPromocionActivaFiltro(promo);
+            if (promo) {
+              setMarcaSeleccionada('todas');
+              setCategoriaSeleccionada('todas');
+            }
+          }}
+        />
 
-          {/* Distintivo de Tienda LuKa */}
-          <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
-            <div className="bg-black/90 backdrop-blur-md text-white text-[10px] sm:text-xs font-bold tracking-widest uppercase px-3 py-1.5 border border-white/20 flex items-center gap-2 shadow-xl">
-              <Sparkles className="w-3.5 h-3.5 text-neutral-300" />
-              <span>LuKa • Catálogo Oficial de Campaña</span>
-            </div>
-          </div>
-
-          {/* Botón flotante para interactuar directamente al hacer click */}
-          <a
-            href="#catalogo-seccion"
-            className="absolute left-1/2 bottom-8 -translate-x-1/2 bg-white hover:bg-neutral-100 text-black font-bold uppercase tracking-widest text-xs px-8 py-3.5 transition-transform hover:scale-105 active:scale-95 shadow-2xl hidden sm:inline-block border border-neutral-200"
-          >
-            Ver Catálogo de Productos
-          </a>
-        </section>
+        {/* Ancla para scroll suave */}
+        <div id="catalogo-seccion" className="scroll-mt-6" />
 
         {/* Filtros de Marcas con diseño editorial y limpio */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-4">
@@ -190,6 +198,19 @@ function CatalogoPrincipal() {
                     onClick={() => setCategoriaSeleccionada('todas')}
                     className="hover:text-neutral-300 ml-1 font-bold"
                     title="Quitar filtro de categoría"
+                  >
+                    <X className="w-3 h-3 inline" />
+                  </button>
+                </div>
+              )}
+              {promocionActivaFiltro && (
+                <div className="flex items-center gap-1.5 bg-blue-600 text-white px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider shadow-xs">
+                  <Tag className="w-3 h-3 inline" />
+                  <span>Promo: {promocionActivaFiltro.titulo}</span>
+                  <button
+                    onClick={() => setPromocionActivaFiltro(null)}
+                    className="hover:text-blue-200 ml-1 font-bold"
+                    title="Quitar filtro de promoción"
                   >
                     <X className="w-3 h-3 inline" />
                   </button>
