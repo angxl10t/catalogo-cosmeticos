@@ -6,6 +6,7 @@ export const MARCAS_MOCK = [
   { id: '3', nombre: 'Ésika', slug: 'esika', categoria_principal: 'COSMETICOS' as const, activo: true },
   { id: '4', nombre: 'Natura', slug: 'natura', categoria_principal: 'COSMETICOS' as const, activo: true },
   { id: '5', nombre: 'Electro Hogar', slug: 'electro-hogar', categoria_principal: 'ELECTRO' as const, activo: true },
+  { id: '6', nombre: "L'BEL", slug: 'lbel', categoria_principal: 'COSMETICOS' as const, activo: true },
 ];
 
 export const CATEGORIAS_MOCK = [

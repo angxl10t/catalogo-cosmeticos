@@ -24,9 +24,9 @@ export function AdminSidebar() {
         </div>
         <div>
           <span className="font-extrabold text-sm text-white leading-none block">
-            Panel<span className="text-blue-400">Admin</span>
+            LuKa<span className="text-blue-400">Admin</span>
           </span>
-          <span className="text-[9px] text-slate-500 leading-none">Cosméticos & Hogar</span>
+          <span className="text-[9px] text-slate-500 leading-none">Cosméticos & Belleza</span>
         </div>
       </div>
 

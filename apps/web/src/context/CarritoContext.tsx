@@ -84,7 +84,7 @@ export function CarritoProvider({ children }: { children: React.ReactNode }) {
 
     if (items.length === 0) return;
 
-    let mensaje = `Hola, deseo consultar el precio y disponibilidad de los siguientes productos del catalogo:\n\n`;
+    let mensaje = `Hola LuKa, deseo consultar el precio y disponibilidad de los siguientes productos del catalogo:\n\n`;
 
     items.forEach((it) => {
       const tono = it.varianteSeleccionada ? ` (Tono: ${it.varianteSeleccionada.nombre})` : '';
@@ -105,7 +105,7 @@ export function CarritoProvider({ children }: { children: React.ReactNode }) {
     const telefono = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '51997491793';
     const tono = variante ? ` en tono ${variante.nombre}` : '';
 
-    const mensaje = `Hola, deseo consultar el precio y disponibilidad de:\n• ${producto.nombre}${tono}\n\nQuedo atento a su respuesta, gracias.`;
+    const mensaje = `Hola LuKa, deseo consultar el precio y disponibilidad de:\n• ${producto.nombre}${tono}\n\nQuedo atento a su respuesta, gracias.`;
     const encoded = encodeURIComponent(mensaje);
     const url = `https://wa.me/${telefono}?text=${encoded}`;
     window.open(url, '_blank');

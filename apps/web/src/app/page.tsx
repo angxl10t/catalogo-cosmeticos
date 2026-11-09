@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { getProductos, getMarcas, isSupabaseConfigured } from '@/lib/supabase';
 import { Producto, Marca } from '@/types/catalogo';
 import { Navbar } from '@/components/Navbar';
@@ -9,7 +9,7 @@ import { CarritoDrawer } from '@/components/CarritoDrawer';
 import { StickyBottomBar } from '@/components/StickyBottomBar';
 import { DetalleProductoModal } from '@/components/DetalleProductoModal';
 import { CarritoProvider } from '@/context/CarritoContext';
-import { AlertCircle, ChevronDown } from 'lucide-react';
+import { AlertCircle, ChevronDown, MessageCircle, X, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 
 const PASO_PAGINACION = 40;
@@ -17,7 +17,9 @@ const PASO_PAGINACION = 40;
 export default function HomePage() {
   return (
     <CarritoProvider>
-      <CatalogoPrincipal />
+      <Suspense fallback={<div className="min-h-screen bg-white" />}>
+        <CatalogoPrincipal />
+      </Suspense>
     </CarritoProvider>
   );
 }
@@ -47,10 +49,46 @@ function CatalogoPrincipal() {
     cargarDatos();
   }, []);
 
+  // Sincronizar URL para abrir producto si viene en query (?p=slug)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && productos.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const pSlug = params.get('p');
+      if (pSlug) {
+        const encontrado = productos.find((p) => p.slug === pSlug);
+        if (encontrado) setProductoSeleccionado(encontrado);
+      }
+    }
+  }, [productos]);
+
+  const abrirModalProducto = (p: Producto) => {
+    setProductoSeleccionado(p);
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', `?p=${p.slug}`);
+    }
+  };
+
+  const cerrarModalProducto = () => {
+    setProductoSeleccionado(null);
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  };
+
   // Reiniciar paginación cuando cambia cualquier filtro
   useEffect(() => {
     setLimiteVisible(PASO_PAGINACION);
   }, [marcaSeleccionada, categoriaSeleccionada, busqueda]);
+
+  // Conteo de productos por marca para mostrar en los botones
+  const conteoPorMarca = useMemo(() => {
+    const map: Record<string, number> = {};
+    productos.forEach((p) => {
+      const slug = p.marca?.slug || p.marca_id || 'otra';
+      map[slug] = (map[slug] || 0) + 1;
+    });
+    return map;
+  }, [productos]);
 
   // Filtro compuesto: marca + categoría del topbar + búsqueda
   const productosFiltrados = useMemo(() => {
@@ -78,7 +116,7 @@ function CatalogoPrincipal() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans text-neutral-900 pb-20 sm:pb-0">
-      {/* Topbar estilo Cyzone con enlaces y logos de Belcorp */}
+      {/* Topbar estilo Cyzone y Belcorp con LuKa */}
       <Navbar
         onAbrirCarrito={() => setCarritoAbierto(true)}
         busqueda={busqueda}
@@ -116,57 +154,81 @@ function CatalogoPrincipal() {
             className="object-cover object-center"
             sizes="100vw"
           />
+
+          {/* Distintivo de Tienda LuKa */}
+          <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
+            <div className="bg-black/90 backdrop-blur-md text-white text-[10px] sm:text-xs font-bold tracking-widest uppercase px-3 py-1.5 border border-white/20 flex items-center gap-2 shadow-xl">
+              <Sparkles className="w-3.5 h-3.5 text-neutral-300" />
+              <span>LuKa • Catálogo Oficial de Campaña</span>
+            </div>
+          </div>
+
           {/* Botón flotante para interactuar directamente al hacer click */}
           <a
             href="#catalogo-seccion"
-            className="absolute left-1/2 bottom-8 -translate-x-1/2 bg-white hover:bg-neutral-100 text-black font-bold uppercase tracking-widest text-xs px-8 py-3 transition-transform hover:scale-105 active:scale-95 shadow-2xl hidden sm:inline-block"
+            className="absolute left-1/2 bottom-8 -translate-x-1/2 bg-white hover:bg-neutral-100 text-black font-bold uppercase tracking-widest text-xs px-8 py-3.5 transition-transform hover:scale-105 active:scale-95 shadow-2xl hidden sm:inline-block border border-neutral-200"
           >
-            compra aquí
+            Ver Catálogo de Productos
           </a>
         </section>
 
         {/* Filtros de Marcas con diseño editorial y limpio */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-3">
-          <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-neutral-200 pb-2.5">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-bold uppercase tracking-widest text-neutral-900">
-                Seleccionar Marca
+              <span className="text-xs font-black uppercase tracking-widest text-neutral-900">
+                Catálogo LuKa
+              </span>
+              <span className="text-neutral-300 hidden sm:inline">|</span>
+              <span className="text-xs text-neutral-500 font-semibold uppercase tracking-wider hidden sm:inline">
+                Filtrar por Marca
               </span>
               {categoriaSeleccionada !== 'todas' && (
-                <span className="text-[11px] bg-black text-white px-2 py-0.5 uppercase tracking-wider font-semibold">
-                  Categoría: {categoriaSeleccionada}
-                </span>
+                <div className="flex items-center gap-1.5 bg-black text-white px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider">
+                  <span>Categoría: {categoriaSeleccionada}</span>
+                  <button
+                    onClick={() => setCategoriaSeleccionada('todas')}
+                    className="hover:text-neutral-300 ml-1 font-bold"
+                    title="Quitar filtro de categoría"
+                  >
+                    <X className="w-3 h-3 inline" />
+                  </button>
+                </div>
               )}
             </div>
-            <span className="text-xs text-neutral-500 font-medium">
-              {productosFiltrados.length} productos disponibles
+            <span className="text-xs text-neutral-500 font-semibold">
+              {productosFiltrados.length} de {productos.length} productos
             </span>
           </div>
 
+          {/* Pills de marcas horizontales con contadores reales */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
             <button
               onClick={() => setMarcaSeleccionada('todas')}
               className={`px-4 py-2 text-xs font-bold uppercase tracking-wider shrink-0 transition-all border ${
                 marcaSeleccionada === 'todas'
-                  ? 'bg-black text-white border-black'
+                  ? 'bg-black text-white border-black shadow-xs'
                   : 'bg-white border-neutral-300 text-neutral-800 hover:border-black'
               }`}
             >
-              Todas las Marcas ({productos.length})
+              Todas ({productos.length})
             </button>
-            {marcas.map((m) => (
-              <button
-                key={m.id}
-                onClick={() => setMarcaSeleccionada(m.slug)}
-                className={`px-4 py-2 text-xs font-bold uppercase tracking-wider shrink-0 transition-all border ${
-                  marcaSeleccionada === m.slug
-                    ? 'bg-black text-white border-black'
-                    : 'bg-white border-neutral-300 text-neutral-800 hover:border-black'
-                }`}
-              >
-                {m.nombre}
-              </button>
-            ))}
+            {marcas.map((m) => {
+              const count = conteoPorMarca[m.slug] ?? 0;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => setMarcaSeleccionada(m.slug)}
+                  className={`px-4 py-2 text-xs font-bold uppercase tracking-wider shrink-0 transition-all border ${
+                    marcaSeleccionada === m.slug
+                      ? 'bg-black text-white border-black shadow-xs'
+                      : 'bg-white border-neutral-300 text-neutral-800 hover:border-black'
+                  }`}
+                >
+                  {m.nombre} ({count})
+                </button>
+              );
+            })}
           </div>
         </section>
 
@@ -179,12 +241,12 @@ function CatalogoPrincipal() {
               ))}
             </div>
           ) : productosFiltrados.length === 0 ? (
-            <div className="bg-neutral-50 border border-neutral-200 p-16 text-center space-y-2">
+            <div className="bg-neutral-50 border border-neutral-200 p-16 text-center space-y-3">
               <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-900">
-                No se encontraron productos
+                No se encontraron productos en LuKa
               </h3>
-              <p className="text-xs text-neutral-500">
-                Intenta seleccionando otra marca o limpiando los filtros de búsqueda.
+              <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+                No hay coincidencias para los filtros aplicados. Intenta seleccionando otra marca o limpiando la búsqueda.
               </p>
               <button
                 onClick={() => {
@@ -192,9 +254,9 @@ function CatalogoPrincipal() {
                   setCategoriaSeleccionada('todas');
                   setBusqueda('');
                 }}
-                className="mt-3 inline-block bg-black text-white text-xs font-bold uppercase tracking-wider px-4 py-2 hover:bg-neutral-800"
+                className="mt-3 inline-block bg-black text-white text-xs font-bold uppercase tracking-widest px-6 py-2.5 hover:bg-neutral-800 transition-all"
               >
-                Ver todos los productos
+                Ver todo el catálogo LuKa
               </button>
             </div>
           ) : (
@@ -204,7 +266,7 @@ function CatalogoPrincipal() {
                   <ProductoCard
                     key={prod.id}
                     producto={prod}
-                    onVerDetalle={(p) => setProductoSeleccionado(p)}
+                    onVerDetalle={(p) => abrirModalProducto(p)}
                   />
                 ))}
               </div>
@@ -229,11 +291,23 @@ function CatalogoPrincipal() {
         </section>
       </main>
 
+      {/* Botón Flotante Permanente de WhatsApp LuKa */}
+      <a
+        href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '51997491793'}?text=${encodeURIComponent('Hola LuKa, deseo realizar una consulta sobre el catálogo de cosméticos y belleza.')}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-40 bg-black hover:bg-neutral-800 text-white p-3 sm:px-4 sm:py-3 shadow-2xl flex items-center gap-2 border border-white/20 transition-all hover:scale-105 active:scale-95 text-xs font-bold uppercase tracking-wider"
+        aria-label="Contactar a LuKa por WhatsApp"
+      >
+        <MessageCircle className="w-4 h-4 text-emerald-400 stroke-[2.5]" />
+        <span className="hidden sm:inline">WhatsApp LuKa</span>
+      </a>
+
       {/* Modal Detalle de Producto */}
       <DetalleProductoModal
         producto={productoSeleccionado}
         abierto={Boolean(productoSeleccionado)}
-        onCerrar={() => setProductoSeleccionado(null)}
+        onCerrar={cerrarModalProducto}
       />
 
       {/* Drawer Carrito */}
@@ -242,24 +316,28 @@ function CatalogoPrincipal() {
       {/* Sticky Bottom Bar en Móvil */}
       <StickyBottomBar onAbrirCarrito={() => setCarritoAbierto(true)} />
 
-      {/* Footer Minimalista Elegante */}
+      {/* Footer Minimalista Elegante LuKa */}
       <footer className="bg-neutral-900 text-white py-12 mt-20 border-t border-neutral-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-neutral-800 pb-6">
             <div className="text-center sm:text-left">
-              <span className="text-lg font-black tracking-widest uppercase block">
-                Catálogo Digital
+              <span className="text-2xl font-black tracking-tight uppercase block font-sans">
+                LuKa
               </span>
-              <span className="text-xs text-neutral-400 font-light">
-                Cyzone • Ésika • L&apos;Bel • Unique • Natura
+              <span className="text-xs text-neutral-400 font-light block mt-0.5">
+                Catálogo Oficial de Cosméticos, Perfumería & Cuidado Personal
+              </span>
+              <span className="text-[11px] text-neutral-500 block mt-1">
+                Cyzone • Ésika • L&apos;Bel • Yanbal • Natura • Electro Hogar
               </span>
             </div>
-            <div className="text-xs text-neutral-400 text-center sm:text-right">
-              Pedidos y entregas coordinados directamente por WhatsApp
+            <div className="text-xs text-neutral-400 text-center sm:text-right space-y-1">
+              <div className="font-semibold text-white">Atención y Pedidos por WhatsApp</div>
+              <div className="text-[11px] text-neutral-400">Precios de campaña coordinados de manera personalizada</div>
             </div>
           </div>
           <div className="text-[11px] text-neutral-500 text-center">
-            © 2026 Catálogo de Cosméticos & Belleza. Todos los derechos reservados.
+            © 2026 LuKa Cosméticos & Belleza. Todos los derechos reservados.
           </div>
         </div>
       </footer>

@@ -60,7 +60,7 @@ export function ProductoCard({ producto, onVerDetalle }: Props) {
         <div>
           {/* Marca & Referencia */}
           <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-0.5">
-            <span>{producto.marca?.nombre ?? 'CYZONE'}</span>
+            <span>{producto.marca?.nombre ?? 'LUKA'}</span>
             {producto.codigo_referencia && (
               <span className="font-mono text-neutral-300 font-normal">
                 {producto.codigo_referencia}

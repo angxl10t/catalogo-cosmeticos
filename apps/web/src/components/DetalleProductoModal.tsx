@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Producto, VarianteProducto } from '@/types/catalogo';
 import { useCarrito } from '@/context/CarritoContext';
-import { X, MessageCircle, Plus, Check } from 'lucide-react';
+import { X, MessageCircle, Plus, Check, Share2, CheckCheck, Sparkles } from 'lucide-react';
 
 interface Props {
   producto: Producto | null;
@@ -13,10 +13,17 @@ interface Props {
 
 export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
   const { agregarProducto, consultarProductoDirecto } = useCarrito();
-  const [varianteSeleccionada, setVarianteSeleccionada] = useState<VarianteProducto | undefined>(
-    producto?.variantes && producto.variantes.length > 0 ? producto.variantes[0] : undefined
-  );
+  const [varianteSeleccionada, setVarianteSeleccionada] = useState<VarianteProducto | undefined>(undefined);
   const [agregadoAnim, setAgregadoAnim] = useState(false);
+  const [copiado, setCopiado] = useState(false);
+
+  useEffect(() => {
+    if (producto?.variantes && producto.variantes.length > 0) {
+      setVarianteSeleccionada(producto.variantes[0]);
+    } else {
+      setVarianteSeleccionada(undefined);
+    }
+  }, [producto]);
 
   if (!abierto || !producto) return null;
 
@@ -26,6 +33,15 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
     setTimeout(() => setAgregadoAnim(false), 900);
   };
 
+  const handleCompartir = async () => {
+    const url = `${window.location.origin}?p=${producto.slug}`;
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(url);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    }
+  };
+
   const imagenMostrar = varianteSeleccionada?.imagen_url || producto.imagen_principal;
 
   return (
@@ -33,34 +49,56 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
       <div className="fixed inset-0" onClick={onCerrar} />
 
       <div className="relative bg-white max-w-xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden border border-neutral-200 z-10 text-neutral-900">
-        {/* Boton cerrar */}
-        <button
-          onClick={onCerrar}
-          className="absolute top-3.5 right-3.5 z-20 p-2 bg-white text-black border border-neutral-200 hover:bg-neutral-100 transition-all"
-          aria-label="Cerrar modal"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        {/* Barra superior de acciones */}
+        <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5">
+          <button
+            onClick={handleCompartir}
+            title="Copiar enlace de este producto"
+            className="p-2 bg-white text-black border border-neutral-200 hover:bg-neutral-100 transition-all flex items-center gap-1 text-xs font-semibold"
+            aria-label="Compartir producto"
+          >
+            {copiado ? <CheckCheck className="w-4 h-4 text-emerald-600" /> : <Share2 className="w-4 h-4" />}
+            <span className="hidden sm:inline text-[11px]">{copiado ? 'Enlace copiado' : 'Compartir'}</span>
+          </button>
+
+          <button
+            onClick={onCerrar}
+            className="p-2 bg-white text-black border border-neutral-200 hover:bg-neutral-100 transition-all"
+            aria-label="Cerrar modal"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
         <div className="overflow-y-auto p-5 sm:p-6 space-y-5">
           {/* Imagen Hero */}
-          <div className="relative aspect-square w-full bg-neutral-100 border border-neutral-200">
+          <div className="relative aspect-square w-full bg-neutral-100 border border-neutral-200 overflow-hidden">
             <img
               src={imagenMostrar}
               alt={producto.nombre}
               className="w-full h-full object-cover object-center"
             />
+            {producto.es_destacado && (
+              <span className="absolute bottom-3 left-3 bg-black text-white text-[10px] uppercase font-bold tracking-widest px-2.5 py-1">
+                Destacado LuKa
+              </span>
+            )}
           </div>
 
           {/* Info Principal */}
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-widest text-neutral-500">
-                {producto.marca?.nombre ?? 'CYZONE'}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-widest text-neutral-900">
+                  {producto.marca?.nombre ?? 'LuKa'}
+                </span>
+                <span className="text-[10px] text-neutral-400 font-medium border-l border-neutral-300 pl-2">
+                  Catálogo LuKa
+                </span>
+              </div>
               {producto.codigo_referencia && (
                 <span className="text-[11px] text-neutral-400 font-mono">
-                  COD: {producto.codigo_referencia}
+                  REF: {producto.codigo_referencia}
                 </span>
               )}
             </div>
@@ -69,11 +107,11 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
               {producto.nombre}
             </h2>
 
-            {/* Aviso de precio por WhatsApp */}
+            {/* Aviso de precio por WhatsApp LuKa */}
             <div className="p-3 bg-neutral-50 border border-neutral-200 text-xs text-neutral-600 flex items-center justify-between">
-              <span>Precio y promocion de campana:</span>
+              <span>Precio y promociones vigentes:</span>
               <span className="font-bold text-black uppercase tracking-wider text-[11px]">
-                A consultar por WhatsApp
+                Coordinar con LuKa por WhatsApp
               </span>
             </div>
           </div>
@@ -83,7 +121,7 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
             <div className="p-4 bg-neutral-50 border border-neutral-200 space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-neutral-700 uppercase tracking-wider text-[11px]">
-                  Tono o Presentacion:
+                  Tono seleccionado:
                 </span>
                 <span className="font-bold text-black">
                   {varianteSeleccionada?.nombre}
@@ -119,9 +157,9 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
 
           {/* Descripcion */}
           {producto.descripcion && (
-            <div className="space-y-1">
+            <div className="space-y-1 pt-1">
               <h4 className="text-[11px] font-bold uppercase tracking-widest text-neutral-400">
-                Descripcion del Producto
+                Detalles del Producto
               </h4>
               <p className="text-xs sm:text-sm text-neutral-700 leading-relaxed">
                 {producto.descripcion}
