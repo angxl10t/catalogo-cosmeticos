@@ -78,7 +78,7 @@ export function CarritoProvider({ children }: { children: React.ReactNode }) {
 
   const totalItems = items.reduce((acc, it) => acc + it.cantidad, 0);
 
-  // Consulta consolidada por WhatsApp: clara, sin numeración y solo con referencia y tono
+  // Consulta consolidada por WhatsApp: nombre de producto limpio y tonalidad
   const consultarWhatsApp = (telefonoConfigurado?: string) => {
     const telefono = telefonoConfigurado || process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '51997491793';
 
@@ -87,11 +87,10 @@ export function CarritoProvider({ children }: { children: React.ReactNode }) {
     let mensaje = `Hola, deseo consultar el precio y disponibilidad de los siguientes productos del catalogo:\n\n`;
 
     items.forEach((it) => {
-      const ref = it.producto.codigo_referencia ? `[Ref: ${it.producto.codigo_referencia}] ` : '';
       const tono = it.varianteSeleccionada ? ` (Tono: ${it.varianteSeleccionada.nombre})` : '';
       const cantidad = it.cantidad > 1 ? ` - Cantidad: ${it.cantidad}` : '';
 
-      mensaje += `• ${ref}${it.producto.nombre}${tono}${cantidad}\n`;
+      mensaje += `• ${it.producto.nombre}${tono}${cantidad}\n`;
     });
 
     mensaje += `\nQuedo a la espera de su respuesta para coordinar. Muchas gracias.`;
@@ -101,13 +100,12 @@ export function CarritoProvider({ children }: { children: React.ReactNode }) {
     window.open(url, '_blank');
   };
 
-  // Consulta directa de un solo producto: limpia, directa con referencia y tono
+  // Consulta directa de un solo producto: limpia con nombre de producto y tono
   const consultarProductoDirecto = (producto: Producto, variante?: VarianteProducto) => {
     const telefono = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '51997491793';
-    const ref = producto.codigo_referencia ? `[Ref: ${producto.codigo_referencia}] ` : '';
     const tono = variante ? ` en tono ${variante.nombre}` : '';
 
-    const mensaje = `Hola, deseo consultar el precio y disponibilidad de:\n• ${ref}${producto.nombre}${tono}\n\nQuedo atento a su respuesta, gracias.`;
+    const mensaje = `Hola, deseo consultar el precio y disponibilidad de:\n• ${producto.nombre}${tono}\n\nQuedo atento a su respuesta, gracias.`;
     const encoded = encodeURIComponent(mensaje);
     const url = `https://wa.me/${telefono}?text=${encoded}`;
     window.open(url, '_blank');
