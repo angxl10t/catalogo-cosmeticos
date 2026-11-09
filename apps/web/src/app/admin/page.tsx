@@ -64,22 +64,41 @@ export default function AdminDashboardPage() {
   }, []);
 
   const handleToggleActivo = async (prod: Producto) => {
-    if (!supabase) return;
     const nuevoEstado = !prod.activo;
 
     setProductos((prev) =>
       prev.map((p) => (p.id === prod.id ? { ...p, activo: nuevoEstado } : p))
     );
 
-    await supabase.from('productos').update({ activo: nuevoEstado }).eq('id', prod.id);
+    try {
+      await fetch('/api/productos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'toggle_activo', productoId: prod.id, activo: nuevoEstado }),
+      });
+    } catch {
+      if (supabase) {
+        await supabase.from('productos').update({ activo: nuevoEstado }).eq('id', prod.id);
+      }
+    }
   };
 
   const handleEliminarProducto = async (id: string) => {
     if (!confirm('¿Estás seguro de eliminar este producto del catálogo?')) return;
-    if (!supabase) return;
 
     setProductos((prev) => prev.filter((p) => p.id !== id));
-    await supabase.from('productos').delete().eq('id', id);
+
+    try {
+      await fetch('/api/productos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', productoId: id }),
+      });
+    } catch {
+      if (supabase) {
+        await supabase.from('productos').delete().eq('id', id);
+      }
+    }
   };
 
   const handleGuardarTelefono = async () => {
@@ -363,14 +382,20 @@ export default function AdminDashboardPage() {
       </main>
 
       {/* Modal de Creación / Edición */}
-      <ProductoFormModal
-        abierto={modalAbierto}
-        onCerrar={() => setModalAbierto(false)}
-        onGuardado={cargarDatos}
-        productoEditar={productoSeleccionado}
-        marcas={marcas}
-        categorias={categorias}
-      />
+      {modalAbierto && (
+        <ProductoFormModal
+          key={productoSeleccionado ? productoSeleccionado.id : 'nuevo'}
+          abierto={modalAbierto}
+          onCerrar={() => {
+            setModalAbierto(false);
+            setProductoSeleccionado(null);
+          }}
+          onGuardado={cargarDatos}
+          productoEditar={productoSeleccionado}
+          marcas={marcas}
+          categorias={categorias}
+        />
+      )}
     </div>
   );
 }

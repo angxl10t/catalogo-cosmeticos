@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Producto, Marca, Categoria } from '@/types/catalogo';
 import { supabase } from '@/lib/supabase';
-import { X, Plus, Trash2, Image as ImageIcon, Save, Sparkles } from 'lucide-react';
+import { X, Plus, Trash2, Save } from 'lucide-react';
 
 interface ModalProps {
   abierto: boolean;
@@ -22,49 +22,109 @@ export function ProductoFormModal({
   marcas,
   categorias,
 }: ModalProps) {
-  const [nombre, setNombre] = useState(productoEditar?.nombre ?? '');
-  const [codigoRef, setCodigoRef] = useState(productoEditar?.codigo_referencia ?? '');
-  const [marcaId, setMarcaId] = useState(productoEditar?.marca_id ?? (marcas[0]?.id || ''));
-  const [categoriaId, setCategoriaId] = useState(productoEditar?.categoria_id ?? (categorias[0]?.id || ''));
-  const [precioRegular, setPrecioRegular] = useState(productoEditar?.precio_regular?.toString() ?? '0');
-  const [precioOferta, setPrecioOferta] = useState(productoEditar?.precio_oferta?.toString() ?? '');
-  const [stock, setStock] = useState(productoEditar?.stock?.toString() ?? '10');
-  const [descripcion, setDescripcion] = useState(productoEditar?.descripcion ?? '');
-  const [imagenPrincipal, setImagenPrincipal] = useState(productoEditar?.imagen_principal ?? '');
-  const [esDestacado, setEsDestacado] = useState(productoEditar?.es_destacado ?? false);
-  const [esNuevo, setEsNuevo] = useState(productoEditar?.es_nuevo ?? true);
-  const [activo, setActivo] = useState(productoEditar?.activo ?? true);
+  const [nombre, setNombre] = useState('');
+  const [codigoRef, setCodigoRef] = useState('');
+  const [marcaId, setMarcaId] = useState('');
+  const [categoriaId, setCategoriaId] = useState('');
+  const [precioRegular, setPrecioRegular] = useState('0');
+  const [precioOferta, setPrecioOferta] = useState('');
+  const [stock, setStock] = useState('10');
+  const [descripcion, setDescripcion] = useState('');
+  const [imagenPrincipal, setImagenPrincipal] = useState('');
+  const [esDestacado, setEsDestacado] = useState(false);
+  const [esNuevo, setEsNuevo] = useState(true);
+  const [activo, setActivo] = useState(true);
 
   // Variantes
-  const [variantes, setVariantes] = useState<{ id?: string; nombre: string; codigo_hex: string; stock: number }[]>(
-    productoEditar?.variantes?.map((v) => ({
-      id: v.id,
-      nombre: v.nombre,
-      codigo_hex: v.codigo_hex ?? '#E11D48',
-      stock: v.stock,
-    })) ?? []
-  );
+  const [variantes, setVariantes] = useState<{ id?: string; nombre: string; codigo_hex: string; stock: number; codigo_tono?: string }[]>([]);
 
   const [guardando, setGuardando] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Efecto crucial: sincronizar todos los datos cuando se abre el modal o cambia el producto a editar
+  useEffect(() => {
+    if (!abierto) return;
+
+    if (productoEditar) {
+      // 1. Cargar datos del producto existente
+      setNombre(productoEditar.nombre || '');
+      setCodigoRef(productoEditar.codigo_referencia || '');
+      
+      const mId = productoEditar.marca_id || productoEditar.marca?.id || (marcas.length > 0 ? marcas[0].id : '');
+      setMarcaId(mId);
+
+      const cId = productoEditar.categoria_id || productoEditar.categoria?.id || (categorias.length > 0 ? categorias[0].id : '');
+      setCategoriaId(cId);
+
+      setPrecioRegular(
+        productoEditar.precio_regular !== undefined && productoEditar.precio_regular !== null
+          ? String(productoEditar.precio_regular)
+          : '0'
+      );
+      setPrecioOferta(
+        productoEditar.precio_oferta !== undefined && productoEditar.precio_oferta !== null
+          ? String(productoEditar.precio_oferta)
+          : ''
+      );
+      setStock(
+        productoEditar.stock !== undefined && productoEditar.stock !== null
+          ? String(productoEditar.stock)
+          : '10'
+      );
+      setDescripcion(productoEditar.descripcion || '');
+      setImagenPrincipal(productoEditar.imagen_principal || '');
+      setEsDestacado(Boolean(productoEditar.es_destacado));
+      setEsNuevo(Boolean(productoEditar.es_nuevo));
+      setActivo(productoEditar.activo !== false);
+
+      if (productoEditar.variantes && productoEditar.variantes.length > 0) {
+        setVariantes(
+          productoEditar.variantes.map((v) => ({
+            id: v.id,
+            nombre: v.nombre,
+            codigo_hex: v.codigo_hex || '#BA000D',
+            codigo_tono: v.codigo_tono || '',
+            stock: v.stock ?? 5,
+          }))
+        );
+      } else {
+        setVariantes([]);
+      }
+    } else {
+      // 2. Modo nuevo producto: limpiar campos
+      setNombre('');
+      setCodigoRef('');
+      setMarcaId(marcas.length > 0 ? marcas[0].id : '');
+      setCategoriaId(categorias.length > 0 ? categorias[0].id : '');
+      setPrecioRegular('0');
+      setPrecioOferta('');
+      setStock('15');
+      setDescripcion('');
+      setImagenPrincipal('');
+      setEsDestacado(false);
+      setEsNuevo(true);
+      setActivo(true);
+      setVariantes([]);
+    }
+
+    setErrorMsg('');
+  }, [abierto, productoEditar, marcas, categorias]);
+
   if (!abierto) return null;
 
   const agregarVariante = () => {
-    setVariantes([...variantes, { nombre: 'Nuevo Tono', codigo_hex: '#E11D48', stock: 5 }]);
+    setVariantes((prev) => [
+      ...prev,
+      { nombre: 'Nuevo Tono', codigo_hex: '#BA000D', stock: 10, codigo_tono: `TONO-${prev.length + 1}` },
+    ]);
   };
 
   const quitarVariante = (index: number) => {
-    setVariantes(variantes.filter((_, i) => i !== index));
+    setVariantes((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!supabase) {
-      alert('Error: Supabase no está conectado.');
-      return;
-    }
-
     setGuardando(true);
     setErrorMsg('');
 
@@ -77,71 +137,110 @@ export function ProductoFormModal({
         .replace(/^-+|-+$/g, '');
 
       const payload = {
-        nombre,
-        codigo_referencia: codigoRef || null,
+        nombre: nombre.trim(),
+        codigo_referencia: codigoRef.trim() || null,
         slug: productoEditar?.slug ?? `${slugGenerado}-${Math.floor(1000 + Math.random() * 9000)}`,
         marca_id: marcaId || null,
         categoria_id: categoriaId || null,
         precio_regular: parseFloat(precioRegular) || 0,
         precio_oferta: precioOferta ? parseFloat(precioOferta) : null,
         stock: parseInt(stock) || 0,
-        descripcion,
-        imagen_principal: imagenPrincipal || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=600&q=80',
+        descripcion: descripcion.trim() || null,
+        imagen_principal: imagenPrincipal.trim() || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=600&q=80',
         es_destacado: esDestacado,
         es_nuevo: esNuevo,
         activo,
         updated_at: new Date().toISOString(),
       };
 
-      let productoId = productoEditar?.id;
+      const esEdicion = Boolean(productoEditar);
+      let guardadoExitoso = false;
 
-      if (productoEditar) {
-        // Actualizar
-        const { error } = await supabase
-          .from('productos')
-          .update(payload)
-          .eq('id', productoEditar.id);
+      // 1. Intentar guardar a través de la API interna (evita 401 RLS)
+      try {
+        const apiRes = await fetch('/api/productos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: esEdicion ? 'update' : 'create',
+            productoId: productoEditar?.id,
+            payload,
+            variantes,
+          }),
+        });
 
-        if (error) throw error;
-      } else {
-        // Crear
-        const { data, error } = await supabase
-          .from('productos')
-          .insert(payload)
-          .select('id')
-          .single();
-
-        if (error) throw error;
-        productoId = data.id;
+        if (apiRes.ok) {
+          guardadoExitoso = true;
+        } else {
+          const errData = await apiRes.json();
+          console.warn('API /api/productos retornó error:', errData.error);
+        }
+      } catch (apiErr) {
+        console.warn('Fallo conectando a /api/productos, probando cliente directo:', apiErr);
       }
 
-      // Guardar / actualizar variantes si existen
-      if (productoId && variantes.length > 0) {
-        // Borramos variantes anteriores y recreamos para simplicidad
-        await supabase.from('producto_variantes').delete().eq('producto_id', productoId);
+      // 2. Si la API no respondió o falló, fallback directo con Supabase
+      if (!guardadoExitoso && supabase) {
+        if (esEdicion && productoEditar) {
+          const { error: updErr } = await supabase
+            .from('productos')
+            .update(payload)
+            .eq('id', productoEditar.id);
 
-        const variantesPayload = variantes.map((v) => ({
-          producto_id: productoId,
-          nombre: v.nombre,
-          codigo_hex: v.codigo_hex,
-          stock: v.stock,
-          activo: true,
-        }));
+          if (updErr) throw updErr;
 
-        await supabase.from('producto_variantes').insert(variantesPayload);
+          if (variantes.length > 0) {
+            await supabase.from('producto_variantes').delete().eq('producto_id', productoEditar.id);
+            const varPayload = variantes.map((v, idx) => ({
+              producto_id: productoEditar.id,
+              nombre: v.nombre,
+              codigo_tono: v.codigo_tono || `TONO-${idx + 1}`,
+              codigo_hex: v.codigo_hex,
+              stock: v.stock,
+              activo: true,
+            }));
+            await supabase.from('producto_variantes').insert(varPayload);
+          }
+        } else {
+          const { data, error: insErr } = await supabase
+            .from('productos')
+            .insert(payload)
+            .select('id')
+            .single();
+
+          if (insErr) throw insErr;
+
+          if (data && variantes.length > 0) {
+            const varPayload = variantes.map((v, idx) => ({
+              producto_id: data.id,
+              nombre: v.nombre,
+              codigo_tono: v.codigo_tono || `TONO-${idx + 1}`,
+              codigo_hex: v.codigo_hex,
+              stock: v.stock,
+              activo: true,
+            }));
+            await supabase.from('producto_variantes').insert(varPayload);
+          }
+        }
+        guardadoExitoso = true;
+      }
+
+      if (!guardadoExitoso) {
+        throw new Error('No se pudo guardar el producto. Revisa la conexión.');
       }
 
       onGuardado();
       onCerrar();
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Error guardando el producto');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al guardar producto';
+      setErrorMsg(msg);
     } finally {
       setGuardando(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
       <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-100">
         {/* Header */}
         <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
@@ -150,12 +249,13 @@ export function ProductoFormModal({
               {productoEditar ? 'Editar Producto' : 'Nuevo Producto'}
             </h2>
             <p className="text-xs text-slate-500">
-              Completa los datos para el catálogo y sincronización con Supabase.
+              {productoEditar ? `Modificando: ${productoEditar.nombre}` : 'Completa los datos para registrar un nuevo producto en LuKa.'}
             </p>
           </div>
           <button
             onClick={onCerrar}
             className="p-2 rounded-full hover:bg-slate-200 text-slate-400 transition-colors"
+            aria-label="Cerrar modal"
           >
             <X className="w-5 h-5" />
           </button>
@@ -177,8 +277,8 @@ export function ProductoFormModal({
                 required
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
-                placeholder="Ej: Labial Mate Velvet"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600"
+                placeholder="Ej: Labial Mate Studio Look"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600 bg-white"
               />
             </div>
             <div className="space-y-1">
@@ -187,8 +287,8 @@ export function ProductoFormModal({
                 type="text"
                 value={codigoRef}
                 onChange={(e) => setCodigoRef(e.target.value)}
-                placeholder="Ej: CYZ-20412"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600"
+                placeholder="Ej: CYZ-LAB-01"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600 bg-white"
               />
             </div>
           </div>
@@ -233,7 +333,7 @@ export function ProductoFormModal({
                 required
                 value={precioRegular}
                 onChange={(e) => setPrecioRegular(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600 bg-white"
               />
             </div>
             <div className="space-y-1">
@@ -254,7 +354,7 @@ export function ProductoFormModal({
                 required
                 value={stock}
                 onChange={(e) => setStock(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600 bg-white"
               />
             </div>
           </div>
@@ -268,10 +368,10 @@ export function ProductoFormModal({
                 value={imagenPrincipal}
                 onChange={(e) => setImagenPrincipal(e.target.value)}
                 placeholder="https://images.unsplash.com/..."
-                className="flex-1 px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600"
+                className="flex-1 px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600 bg-white"
               />
               {imagenPrincipal && (
-                <div className="w-9 h-9 rounded-xl border border-slate-200 overflow-hidden shrink-0">
+                <div className="w-9 h-9 rounded-xl border border-slate-200 overflow-hidden shrink-0 bg-slate-100">
                   <img src={imagenPrincipal} alt="Previa" className="w-full h-full object-cover" />
                 </div>
               )}
@@ -279,13 +379,13 @@ export function ProductoFormModal({
           </div>
 
           <div className="space-y-1">
-            <label className="font-semibold text-slate-700">Descripción</label>
+            <label className="font-semibold text-slate-700">Descripción del Producto</label>
             <textarea
-              rows={2}
+              rows={3}
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
               placeholder="Detalle o características del producto..."
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600"
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600 bg-white"
             />
           </div>
 
@@ -299,7 +399,7 @@ export function ProductoFormModal({
               <button
                 type="button"
                 onClick={agregarVariante}
-                className="flex items-center gap-1 text-[11px] font-semibold bg-white border border-slate-200 text-blue-600 px-2.5 py-1 rounded-lg hover:bg-blue-50"
+                className="flex items-center gap-1 text-[11px] font-semibold bg-white border border-slate-200 text-blue-600 px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors"
               >
                 <Plus className="w-3 h-3" /> Agregar Tono
               </button>
@@ -343,6 +443,7 @@ export function ProductoFormModal({
                   type="button"
                   onClick={() => quitarVariante(idx)}
                   className="text-slate-400 hover:text-red-500 p-1"
+                  aria-label="Eliminar tono"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -351,7 +452,7 @@ export function ProductoFormModal({
           </div>
 
           {/* Opciones booleanas */}
-          <div className="flex gap-4 pt-1">
+          <div className="flex gap-4 pt-1 flex-wrap">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -386,7 +487,7 @@ export function ProductoFormModal({
             <button
               type="button"
               onClick={onCerrar}
-              className="px-4 py-2 rounded-xl text-slate-600 font-medium hover:bg-slate-100"
+              className="px-4 py-2 rounded-xl text-slate-600 font-medium hover:bg-slate-100 transition-colors"
             >
               Cancelar
             </button>
