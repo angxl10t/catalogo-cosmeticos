@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Producto, VarianteProducto } from '@/types/catalogo';
 import { useCarrito } from '@/context/CarritoContext';
-import { X, ShoppingBag, Check, Send } from 'lucide-react';
+import { X, MessageCircle, Plus, Check } from 'lucide-react';
 
 interface Props {
   producto: Producto | null;
@@ -12,20 +12,13 @@ interface Props {
 }
 
 export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
-  const { agregarProducto, enviarPedidoWhatsApp } = useCarrito();
+  const { agregarProducto, consultarProductoDirecto } = useCarrito();
   const [varianteSeleccionada, setVarianteSeleccionada] = useState<VarianteProducto | undefined>(
     producto?.variantes && producto.variantes.length > 0 ? producto.variantes[0] : undefined
   );
   const [agregadoAnim, setAgregadoAnim] = useState(false);
 
   if (!abierto || !producto) return null;
-
-  const tieneOferta = Boolean(producto.precio_oferta && producto.precio_oferta < producto.precio_regular);
-  const precioUnitario = (producto.precio_oferta ?? producto.precio_regular) + (varianteSeleccionada?.precio_adicional ?? 0);
-  const ahorro = tieneOferta ? producto.precio_regular - (producto.precio_oferta ?? 0) : 0;
-  const porcentaje = tieneOferta
-    ? Math.round(((producto.precio_regular - (producto.precio_oferta ?? 0)) / producto.precio_regular) * 100)
-    : 0;
 
   const handleAgregar = () => {
     agregarProducto(producto, varianteSeleccionada);
@@ -39,11 +32,11 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
       <div className="fixed inset-0" onClick={onCerrar} />
 
-      <div className="relative bg-white max-w-xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden border border-neutral-200 z-10 text-neutral-900 rounded-none sm:rounded-lg">
-        {/* Botón cerrar */}
+      <div className="relative bg-white max-w-xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden border border-neutral-200 z-10 text-neutral-900">
+        {/* Boton cerrar */}
         <button
           onClick={onCerrar}
-          className="absolute top-3.5 right-3.5 z-20 p-2 bg-white/90 hover:bg-white text-black transition-all border border-neutral-200"
+          className="absolute top-3.5 right-3.5 z-20 p-2 bg-white text-black border border-neutral-200 hover:bg-neutral-100 transition-all"
           aria-label="Cerrar modal"
         >
           <X className="w-4 h-4" />
@@ -57,12 +50,6 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
               alt={producto.nombre}
               className="w-full h-full object-cover object-center"
             />
-
-            {tieneOferta && (
-              <div className="absolute top-3 left-3 bg-black text-white text-[10px] font-bold px-2.5 py-1 tracking-widest uppercase">
-                Ahorras S/ {ahorro.toFixed(2)} (-{porcentaje}%)
-              </div>
-            )}
           </div>
 
           {/* Info Principal */}
@@ -73,7 +60,7 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
               </span>
               {producto.codigo_referencia && (
                 <span className="text-[11px] text-neutral-400 font-mono">
-                  REF: {producto.codigo_referencia}
+                  COD: {producto.codigo_referencia}
                 </span>
               )}
             </div>
@@ -82,16 +69,12 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
               {producto.nombre}
             </h2>
 
-            {/* Precios */}
-            <div className="flex items-baseline gap-3 pt-1">
-              <span className="text-2xl sm:text-3xl font-extrabold text-black tracking-tight">
-                S/ {precioUnitario.toFixed(2)}
+            {/* Aviso de precio por WhatsApp */}
+            <div className="p-3 bg-neutral-50 border border-neutral-200 text-xs text-neutral-600 flex items-center justify-between">
+              <span>Precio y promocion de campana:</span>
+              <span className="font-bold text-black uppercase tracking-wider text-[11px]">
+                A consultar por WhatsApp
               </span>
-              {tieneOferta && (
-                <span className="text-sm text-neutral-400 line-through">
-                  S/ {producto.precio_regular.toFixed(2)}
-                </span>
-              )}
             </div>
           </div>
 
@@ -100,7 +83,7 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
             <div className="p-4 bg-neutral-50 border border-neutral-200 space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-neutral-700 uppercase tracking-wider text-[11px]">
-                  Tono seleccionado:
+                  Tono o Presentacion:
                 </span>
                 <span className="font-bold text-black">
                   {varianteSeleccionada?.nombre}
@@ -134,11 +117,11 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
             </div>
           )}
 
-          {/* Descripción */}
+          {/* Descripcion */}
           {producto.descripcion && (
             <div className="space-y-1">
               <h4 className="text-[11px] font-bold uppercase tracking-widest text-neutral-400">
-                Detalles del Producto
+                Descripcion del Producto
               </h4>
               <p className="text-xs sm:text-sm text-neutral-700 leading-relaxed">
                 {producto.descripcion}
@@ -151,36 +134,34 @@ export function DetalleProductoModal({ producto, abierto, onCerrar }: Props) {
         <div className="p-4 sm:p-5 bg-neutral-50 border-t border-neutral-200 flex items-center gap-3">
           <button
             onClick={handleAgregar}
-            className={`flex-1 flex items-center justify-center gap-2 font-bold py-3 px-4 text-xs tracking-wider uppercase transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 font-bold py-3 px-4 text-xs tracking-wider uppercase border transition-all ${
               agregadoAnim
-                ? 'bg-neutral-800 text-white'
-                : 'bg-black hover:bg-neutral-800 text-white'
+                ? 'bg-neutral-800 text-white border-neutral-800'
+                : 'bg-white border-black text-black hover:bg-neutral-100'
             }`}
           >
             {agregadoAnim ? (
               <>
                 <Check className="w-4 h-4" />
-                <span>Agregado a la Bolsa</span>
+                <span>Agregado a la Lista</span>
               </>
             ) : (
               <>
-                <ShoppingBag className="w-4 h-4" />
-                <span>Agregar a la Bolsa</span>
+                <Plus className="w-4 h-4" />
+                <span>Agregar a mi Lista</span>
               </>
             )}
           </button>
 
           <button
             onClick={() => {
-              agregarProducto(producto, varianteSeleccionada);
               onCerrar();
-              enviarPedidoWhatsApp();
+              consultarProductoDirecto(producto, varianteSeleccionada);
             }}
-            className="flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white font-bold py-3 px-5 text-xs tracking-wider uppercase transition-all"
-            title="Pedir por WhatsApp"
+            className="flex-1 flex items-center justify-center gap-2 bg-black hover:bg-neutral-800 text-white font-bold py-3 px-5 text-xs tracking-wider uppercase transition-all"
           >
-            <Send className="w-4 h-4" />
-            <span className="hidden sm:inline">Pedir por WhatsApp</span>
+            <MessageCircle className="w-4 h-4" />
+            <span>Consultar por WhatsApp</span>
           </button>
         </div>
       </div>

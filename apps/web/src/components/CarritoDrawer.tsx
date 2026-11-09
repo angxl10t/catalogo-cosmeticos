@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useCarrito } from '@/context/CarritoContext';
-import { X, Trash2, ShoppingBag, Send } from 'lucide-react';
+import { X, Trash2, ShoppingBag, MessageCircle } from 'lucide-react';
 
 interface DrawerProps {
   abierto: boolean;
@@ -10,7 +10,7 @@ interface DrawerProps {
 }
 
 export function CarritoDrawer({ abierto, onCerrar }: DrawerProps) {
-  const { items, totalPrecio, totalItems, cambiarCantidad, eliminarItem, enviarPedidoWhatsApp } = useCarrito();
+  const { items, totalItems, cambiarCantidad, eliminarItem, consultarWhatsApp } = useCarrito();
 
   if (!abierto) return null;
 
@@ -27,14 +27,14 @@ export function CarritoDrawer({ abierto, onCerrar }: DrawerProps) {
           <div className="p-4 border-b border-neutral-200 flex items-center justify-between bg-neutral-50">
             <div className="flex items-center gap-2">
               <ShoppingBag className="w-5 h-5 text-black" />
-              <h2 className="font-bold text-sm tracking-wide uppercase text-black">
-                Bolsa de Compras ({totalItems})
+              <h2 className="font-bold text-xs tracking-wider uppercase text-black">
+                Lista de Consulta ({totalItems})
               </h2>
             </div>
             <button
               onClick={onCerrar}
               className="p-1 hover:bg-neutral-200 text-neutral-500 transition-colors"
-              aria-label="Cerrar bolsa"
+              aria-label="Cerrar lista"
             >
               <X className="w-5 h-5" />
             </button>
@@ -45,12 +45,11 @@ export function CarritoDrawer({ abierto, onCerrar }: DrawerProps) {
             {items.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 text-neutral-400">
                 <ShoppingBag className="w-12 h-12 mb-3 stroke-[1.2] text-neutral-300" />
-                <p className="font-semibold text-neutral-700 text-sm">Tu bolsa está vacía</p>
-                <p className="text-xs mt-1">Explora el catálogo y añade tus productos favoritos.</p>
+                <p className="font-semibold text-neutral-700 text-sm">No has agregado productos a tu lista</p>
+                <p className="text-xs mt-1">Explora el catálogo y añade los productos que deseas consultar por WhatsApp.</p>
               </div>
             ) : (
               items.map((it) => {
-                const precio = (it.producto.precio_oferta ?? it.producto.precio_regular) + (it.varianteSeleccionada?.precio_adicional ?? 0);
                 return (
                   <div key={`${it.producto.id}-${it.varianteSeleccionada?.id ?? 'def'}`} className="flex gap-3 p-3 bg-neutral-50 border border-neutral-200">
                     <div className="relative w-16 h-16 bg-white border border-neutral-200 overflow-hidden shrink-0">
@@ -77,8 +76,8 @@ export function CarritoDrawer({ abierto, onCerrar }: DrawerProps) {
                         </p>
                       )}
                       <div className="flex items-center justify-between mt-2">
-                        <span className="text-xs font-black text-black">
-                          S/ {(precio * it.cantidad).toFixed(2)}
+                        <span className="text-[11px] font-semibold text-neutral-500">
+                          Cantidad a consultar:
                         </span>
                         <div className="flex items-center gap-2 border border-neutral-300 bg-white px-2 py-0.5">
                           <button
@@ -100,7 +99,7 @@ export function CarritoDrawer({ abierto, onCerrar }: DrawerProps) {
                     <button
                       onClick={() => eliminarItem(it.producto.id, it.varianteSeleccionada?.id)}
                       className="text-neutral-400 hover:text-black self-start p-1 transition-colors"
-                      aria-label="Eliminar ítem"
+                      aria-label="Eliminar producto"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -113,19 +112,15 @@ export function CarritoDrawer({ abierto, onCerrar }: DrawerProps) {
           {/* Footer Checkout */}
           {items.length > 0 && (
             <div className="p-4 border-t border-neutral-200 bg-neutral-50 space-y-3">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-neutral-500 font-bold uppercase tracking-wider">Subtotal</span>
-                <span className="text-lg font-black text-black">S/ {totalPrecio.toFixed(2)}</span>
-              </div>
-              <p className="text-[11px] text-neutral-400">
-                Al enviar el pedido coordinaremos entrega y pago directamente por WhatsApp.
+              <p className="text-[11px] text-neutral-500">
+                Se enviara un mensaje estructurado con los {totalItems} productos seleccionados para consultar precio y coordinar la entrega.
               </p>
               <button
-                onClick={() => enviarPedidoWhatsApp()}
+                onClick={() => consultarWhatsApp()}
                 className="w-full flex items-center justify-center gap-2 bg-black hover:bg-neutral-800 text-white font-bold py-3 px-4 text-xs tracking-widest uppercase transition-all"
               >
-                <Send className="w-4 h-4" />
-                <span>Pedir por WhatsApp</span>
+                <MessageCircle className="w-4 h-4" />
+                <span>Consultar Lista por WhatsApp</span>
               </button>
             </div>
           )}

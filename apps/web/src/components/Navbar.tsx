@@ -34,17 +34,17 @@ export function Navbar({
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-neutral-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-        {/* Izquierda: Menú Hamburguesa & Categorías Topbar */}
+        {/* Izquierda: Menú Hamburguesa & Categorías */}
         <div className="flex items-center gap-6">
           <button
             onClick={() => setMenuAbierto(!menuAbierto)}
             className="p-1.5 text-black hover:opacity-70 transition-opacity"
-            aria-label="Abrir menú"
+            aria-label="Abrir menu"
           >
             {menuAbierto ? <X className="w-6 h-6 stroke-[2.2]" /> : <Menu className="w-6 h-6 stroke-[2.2]" />}
           </button>
 
-          {/* Enlaces de Categorías con divisor vertical idéntico a Cyzone */}
+          {/* Enlaces de Categorías con separador vertical estilo Cyzone */}
           <nav className="hidden lg:flex items-center text-xs font-semibold tracking-wide text-neutral-800">
             {categoriasMenu.map((cat, idx) => (
               <div key={cat.slug} className="flex items-center">
@@ -64,7 +64,7 @@ export function Navbar({
           </nav>
         </div>
 
-        {/* Centro: Logos de Marcas Belcorp (L'BEL | ESIKA | CYZONE) */}
+        {/* Centro: Logos de Marcas Belcorp */}
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2.5 group">
             <span className="font-serif tracking-widest text-neutral-400 text-sm font-semibold hidden md:inline">
@@ -81,7 +81,7 @@ export function Navbar({
           </Link>
         </div>
 
-        {/* Derecha: Buscador, Admin, Carrito */}
+        {/* Derecha: Buscador, Admin, Lista de Consulta */}
         <div className="flex items-center gap-4 text-xs font-medium text-neutral-800">
           <Link
             href="/admin"
@@ -91,7 +91,7 @@ export function Navbar({
             <span>Admin</span>
           </Link>
 
-          {/* Icono de Búsqueda toggle */}
+          {/* Boton Buscador toggle */}
           <button
             onClick={() => setMostrarBuscador(!mostrarBuscador)}
             className="p-1 hover:text-black transition-colors"
@@ -100,15 +100,15 @@ export function Navbar({
             <Search className="w-5 h-5 stroke-[2]" />
           </button>
 
-          {/* Carrito de Compra con badge negro/rojo elegante */}
+          {/* Lista de Consulta */}
           <button
             onClick={onAbrirCarrito}
             className="relative flex items-center p-1 hover:opacity-80 transition-opacity"
-            aria-label="Abrir carrito"
+            aria-label="Abrir lista de consulta"
           >
             <ShoppingBag className="w-5 h-5 stroke-[2] text-black" />
             {totalItems > 0 && (
-              <span className="absolute -top-1 -right-2 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-2 bg-black text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                 {totalItems}
               </span>
             )}
@@ -127,7 +127,7 @@ export function Navbar({
               value={busqueda}
               onChange={(e) => onCambioBusqueda(e.target.value)}
               placeholder="Buscar por producto, marca o fragancia..."
-              className="w-full pl-10 pr-10 py-2 text-xs bg-white border border-neutral-300 rounded-md outline-none focus:border-black transition-all"
+              className="w-full pl-10 pr-10 py-2 text-xs bg-white border border-neutral-300 rounded-none outline-none focus:border-black transition-all"
             />
             {busqueda && (
               <button
@@ -141,7 +141,7 @@ export function Navbar({
         </div>
       )}
 
-      {/* Menú Desplegable Lateral/Móvil */}
+      {/* Menú Desplegable Móvil */}
       {menuAbierto && (
         <div className="lg:hidden border-t border-neutral-200 bg-white px-4 py-3 space-y-2">
           {categoriasMenu.map((cat) => (

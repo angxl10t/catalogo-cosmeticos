@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Producto, VarianteProducto } from '@/types/catalogo';
 import { useCarrito } from '@/context/CarritoContext';
-import { ShoppingBag, Check } from 'lucide-react';
+import { MessageCircle, Plus, Check } from 'lucide-react';
 
 interface Props {
   producto: Producto;
@@ -11,17 +11,11 @@ interface Props {
 }
 
 export function ProductoCard({ producto, onVerDetalle }: Props) {
-  const { agregarProducto } = useCarrito();
+  const { agregarProducto, consultarProductoDirecto } = useCarrito();
   const [varianteSeleccionada, setVarianteSeleccionada] = useState<VarianteProducto | undefined>(
     producto.variantes && producto.variantes.length > 0 ? producto.variantes[0] : undefined
   );
   const [agregadoAnim, setAgregadoAnim] = useState(false);
-
-  const tieneOferta = Boolean(producto.precio_oferta && producto.precio_oferta < producto.precio_regular);
-  const precioActual = (producto.precio_oferta ?? producto.precio_regular) + (varianteSeleccionada?.precio_adicional ?? 0);
-  const porcentajeDescuento = tieneOferta
-    ? Math.round(((producto.precio_regular - (producto.precio_oferta ?? 0)) / producto.precio_regular) * 100)
-    : 0;
 
   const handleAgregar = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -35,7 +29,7 @@ export function ProductoCard({ producto, onVerDetalle }: Props) {
   return (
     <div
       onClick={() => onVerDetalle(producto)}
-      className="group bg-white overflow-hidden border border-neutral-200/80 hover:border-black transition-all duration-200 flex flex-col cursor-pointer relative"
+      className="group bg-white overflow-hidden border border-neutral-200/90 hover:border-black transition-all duration-200 flex flex-col cursor-pointer relative"
     >
       {/* Imagen Principal */}
       <div className="relative aspect-square w-full overflow-hidden bg-neutral-100">
@@ -46,27 +40,32 @@ export function ProductoCard({ producto, onVerDetalle }: Props) {
           loading="lazy"
         />
 
-        {/* Badges de Descuento estilo editorial */}
+        {/* Badges de Estado */}
         <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10 pointer-events-none">
-          {tieneOferta && (
-            <span className="bg-black text-white text-[10px] font-bold px-2 py-0.5 tracking-wider uppercase">
-              -{porcentajeDescuento}%
+          {producto.es_nuevo && (
+            <span className="bg-black text-white text-[9px] font-bold px-2 py-0.5 tracking-widest uppercase">
+              Nuevo
             </span>
           )}
-          {producto.es_nuevo && (
-            <span className="bg-neutral-800 text-white text-[10px] font-medium px-2 py-0.5 tracking-wide uppercase">
-              Nuevo
+          {producto.es_destacado && (
+            <span className="bg-neutral-800 text-white text-[9px] font-semibold px-2 py-0.5 tracking-wider uppercase">
+              Destacado
             </span>
           )}
         </div>
       </div>
 
-      {/* Contenido / Datos del producto */}
-      <div className="p-3.5 flex-1 flex flex-col justify-between space-y-2.5 bg-white">
+      {/* Contenido */}
+      <div className="p-3.5 flex-1 flex flex-col justify-between space-y-3 bg-white">
         <div>
-          {/* Marca */}
-          <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-0.5">
-            {producto.marca?.nombre ?? 'CYZONE'}
+          {/* Marca & Referencia */}
+          <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-0.5">
+            <span>{producto.marca?.nombre ?? 'CYZONE'}</span>
+            {producto.codigo_referencia && (
+              <span className="font-mono text-neutral-300 font-normal">
+                {producto.codigo_referencia}
+              </span>
+            )}
           </div>
 
           {/* Nombre */}
@@ -77,6 +76,12 @@ export function ProductoCard({ producto, onVerDetalle }: Props) {
           {/* Swatches de Tonos si existen */}
           {producto.variantes && producto.variantes.length > 0 && (
             <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between text-[10px] text-neutral-500 mb-1">
+                <span>Tono:</span>
+                <span className="font-semibold text-neutral-800 truncate max-w-[100px]">
+                  {varianteSeleccionada?.nombre}
+                </span>
+              </div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 {producto.variantes.slice(0, 5).map((v) => (
                   <button
@@ -101,38 +106,29 @@ export function ProductoCard({ producto, onVerDetalle }: Props) {
           )}
         </div>
 
-        {/* Precios & Botón de Compra */}
-        <div className="pt-2 border-t border-neutral-100 flex items-center justify-between gap-2">
-          <div>
-            {tieneOferta && (
-              <span className="text-[11px] text-neutral-400 line-through block leading-none">
-                S/ {producto.precio_regular.toFixed(2)}
-              </span>
-            )}
-            <span className="text-sm sm:text-base font-extrabold text-black tracking-tight leading-none block">
-              S/ {precioActual.toFixed(2)}
-            </span>
-          </div>
+        {/* Acciones: Consultar Precio y Agregar a Lista */}
+        <div className="pt-2.5 border-t border-neutral-100 flex items-center gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              consultarProductoDirecto(producto, varianteSeleccionada);
+            }}
+            className="flex-1 flex items-center justify-center gap-1.5 text-[11px] font-bold py-2 px-2.5 bg-black hover:bg-neutral-800 text-white transition-all uppercase tracking-wider"
+          >
+            <MessageCircle className="w-3.5 h-3.5" />
+            <span>Consultar Precio</span>
+          </button>
 
           <button
             onClick={handleAgregar}
-            className={`flex items-center gap-1 text-[11px] font-bold py-2 px-3 rounded-none transition-all active:scale-95 shrink-0 uppercase tracking-wider ${
+            title="Agregar a mi lista para consultar varios"
+            className={`p-2 border transition-all shrink-0 ${
               agregadoAnim
-                ? 'bg-neutral-800 text-white'
-                : 'bg-black hover:bg-neutral-800 text-white'
+                ? 'bg-neutral-800 text-white border-neutral-800'
+                : 'border-neutral-300 hover:border-black text-black bg-white'
             }`}
           >
-            {agregadoAnim ? (
-              <>
-                <Check className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Listo</span>
-              </>
-            ) : (
-              <>
-                <ShoppingBag className="w-3.5 h-3.5" />
-                <span>Agregar</span>
-              </>
-            )}
+            {agregadoAnim ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
           </button>
         </div>
       </div>

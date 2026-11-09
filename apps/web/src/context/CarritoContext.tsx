@@ -9,9 +9,9 @@ interface CarritoContextType {
   eliminarItem: (productoId: string, varianteId?: string) => void;
   cambiarCantidad: (productoId: string, cantidad: number, varianteId?: string) => void;
   totalItems: number;
-  totalPrecio: number;
   limpiarCarrito: () => void;
-  enviarPedidoWhatsApp: (telefono?: string) => void;
+  consultarWhatsApp: (telefono?: string) => void;
+  consultarProductoDirecto: (producto: Producto, variante?: VarianteProducto) => void;
 }
 
 const CarritoContext = createContext<CarritoContextType | undefined>(undefined);
@@ -19,21 +19,19 @@ const CarritoContext = createContext<CarritoContextType | undefined>(undefined);
 export function CarritoProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<ItemCarrito[]>([]);
 
-  // Cargar carrito de localStorage
   useEffect(() => {
-    const guardado = localStorage.getItem('catalogo_carrito');
+    const guardado = localStorage.getItem('catalogo_consulta_items');
     if (guardado) {
       try {
         setItems(JSON.parse(guardado));
       } catch (e) {
-        console.error('Error parseando carrito de storage', e);
+        console.error('Error parseando consulta de storage', e);
       }
     }
   }, []);
 
-  // Guardar cambios
   useEffect(() => {
-    localStorage.setItem('catalogo_carrito', JSON.stringify(items));
+    localStorage.setItem('catalogo_consulta_items', JSON.stringify(items));
   }, [items]);
 
   const agregarProducto = (producto: Producto, variante?: VarianteProducto) => {
@@ -80,33 +78,38 @@ export function CarritoProvider({ children }: { children: React.ReactNode }) {
 
   const totalItems = items.reduce((acc, it) => acc + it.cantidad, 0);
 
-  const totalPrecio = items.reduce((acc, it) => {
-    const precioBase = it.producto.precio_oferta ?? it.producto.precio_regular;
-    const precioAdicional = it.varianteSeleccionada?.precio_adicional ?? 0;
-    return acc + (precioBase + precioAdicional) * it.cantidad;
-  }, 0);
-
-  const enviarPedidoWhatsApp = (telefonoConfigurado?: string) => {
-    const telefono = telefonoConfigurado || process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '51999999999';
+  // Consulta consolidada por WhatsApp sin precios
+  const consultarWhatsApp = (telefonoConfigurado?: string) => {
+    const telefono = telefonoConfigurado || process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '51997491793';
 
     if (items.length === 0) return;
 
-    let mensaje = `👋 *¡Hola! Deseo realizar un pedido desde su catálogo:*\n\n`;
+    let mensaje = `Hola, he revisado el catalogo online y deseo consultar disponibilidad y precio de los siguientes productos:\n\n`;
 
     items.forEach((it, idx) => {
-      const precioUnit = (it.producto.precio_oferta ?? it.producto.precio_regular) + (it.varianteSeleccionada?.precio_adicional ?? 0);
-      const subtotal = precioUnit * it.cantidad;
-      
       const marcaStr = it.producto.marca ? `[${it.producto.marca.nombre}] ` : '';
-      const varianteStr = it.varianteSeleccionada ? ` - Tono/Opción: ${it.varianteSeleccionada.nombre}` : '';
+      const refStr = it.producto.codigo_referencia ? ` (Ref: ${it.producto.codigo_referencia})` : '';
+      const varianteStr = it.varianteSeleccionada ? ` - Tono/Opcion: ${it.varianteSeleccionada.nombre}` : '';
 
-      mensaje += `${idx + 1}. *${marcaStr}${it.producto.nombre}*${varianteStr}\n`;
-      mensaje += `   • Cantidad: ${it.cantidad} x S/ ${precioUnit.toFixed(2)} = *S/ ${subtotal.toFixed(2)}*\n\n`;
+      mensaje += `${idx + 1}. ${marcaStr}${it.producto.nombre}${refStr}${varianteStr}\n`;
+      mensaje += `   Cantidad: ${it.cantidad} unidad(es)\n\n`;
     });
 
-    mensaje += `💰 *TOTAL ESTIMADO: S/ ${totalPrecio.toFixed(2)}*\n\n`;
-    mensaje += `¿Tienen disponibilidad para coordinar la entrega y el pago? Muchas gracias.`;
+    mensaje += `Me podrian confirmar el precio actualizado y metodo de entrega? Muchas gracias.`;
 
+    const encoded = encodeURIComponent(mensaje);
+    const url = `https://wa.me/${telefono}?text=${encoded}`;
+    window.open(url, '_blank');
+  };
+
+  // Consulta directa de un solo producto
+  const consultarProductoDirecto = (producto: Producto, variante?: VarianteProducto) => {
+    const telefono = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '51997491793';
+    const marcaStr = producto.marca ? `[${producto.marca.nombre}] ` : '';
+    const refStr = producto.codigo_referencia ? ` (Ref: ${producto.codigo_referencia})` : '';
+    const varianteStr = variante ? ` en tono/opcion ${variante.nombre}` : '';
+
+    const mensaje = `Hola, deseo consultar el precio y disponibilidad del producto: ${marcaStr}${producto.nombre}${refStr}${varianteStr}. Quedo atento a su respuesta, gracias.`;
     const encoded = encodeURIComponent(mensaje);
     const url = `https://wa.me/${telefono}?text=${encoded}`;
     window.open(url, '_blank');
@@ -120,9 +123,9 @@ export function CarritoProvider({ children }: { children: React.ReactNode }) {
         eliminarItem,
         cambiarCantidad,
         totalItems,
-        totalPrecio,
         limpiarCarrito,
-        enviarPedidoWhatsApp,
+        consultarWhatsApp,
+        consultarProductoDirecto,
       }}
     >
       {children}
